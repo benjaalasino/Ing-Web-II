@@ -1,7 +1,24 @@
 const API_BASE_URL = 'http://localhost:3000/api';
+const DEMO_USER = {
+    name: 'Benjamin Demo',
+    email: 'benja@gastoclaro.com',
+    password: '123456'
+};
 
 const form = document.getElementById('loginForm');
 const message = document.getElementById('loginMessage');
+
+const isDemoCredentials = (payload) => {
+    return payload.email.toLowerCase() === DEMO_USER.email && payload.password === DEMO_USER.password;
+};
+
+const saveSession = (user) => {
+    localStorage.setItem('gc_current_user', JSON.stringify({
+        name: user.name,
+        email: user.email,
+        loginAt: new Date().toISOString()
+    }));
+};
 
 form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -26,9 +43,25 @@ form.addEventListener('submit', async (event) => {
             return;
         }
 
+        saveSession(data.user);
         message.textContent = `Bienvenido, ${data.user.name}. Login correcto.`;
         form.reset();
+
+        setTimeout(() => {
+            window.location.href = 'upload.html';
+        }, 500);
     } catch (error) {
-        message.textContent = 'No se pudo conectar con el backend. Ejecuta la API en localhost:3000.';
+        if (isDemoCredentials(payload)) {
+            saveSession(DEMO_USER);
+            message.textContent = `Bienvenido, ${DEMO_USER.name}. Login demo correcto.`;
+            form.reset();
+
+            setTimeout(() => {
+                window.location.href = 'upload.html';
+            }, 500);
+            return;
+        }
+
+        message.textContent = 'Credenciales invalidas. Usa demo: benja@gastoclaro.com / 123456.';
     }
 });
