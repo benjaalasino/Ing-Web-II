@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WisePocket | Mi perfil</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+    <div id="appHeader"></div>
+    <main class="layout grid-2">
+        <section class="card">
+            <h1 class="section-title">Mi perfil</h1>
+            <form id="profileForm">
+                <label>Nombre<input id="inputProfileName" type="text" required></label>
+                <label>Email<input id="inputProfileEmail" type="email" required></label>
+                <label>Rol<input id="inputProfileRole" type="text" disabled></label>
+                <button id="btnSaveProfile" class="btn btn-primary" type="button">Guardar cambios</button>
+            </form>
+            <div id="profileMessage" class="hidden"></div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title">Cambiar contrasena</h2>
+            <form id="passwordForm">
+                <label>Contrasena actual<input id="inputCurrentPassword" type="password" required></label>
+                <label>Nueva contrasena<input id="inputNewPassword" type="password" required></label>
+                <label>Confirmar nueva<input id="inputConfirmNewPassword" type="password" required></label>
+                <button id="btnChangePassword" class="btn btn-primary" type="button">Cambiar contrasena</button>
+            </form>
+            <div id="passwordMessage" class="hidden"></div>
+        </section>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/layout.js"></script>
+    <script src="../js/profile.js"></script>
+</body>
+</html>

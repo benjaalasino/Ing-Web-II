@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WisePocket | Login</title>
+    <title>WisePocket | Registro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/app.css">
     <style>
         .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
-        .auth-card { width: min(440px, 100%); }
+        .auth-card { width: min(460px, 100%); }
         .auth-footer { margin-top: 0.6rem; color: var(--muted); }
     </style>
 </head>
@@ -18,27 +18,31 @@
     <main class="auth-wrap">
         <section class="card auth-card">
             <a class="brand" href="index.html">WisePocket</a>
-            <h1 class="section-title">Iniciar sesion</h1>
-            <p class="section-subtitle">Demo user: user@wisepocket.com / 123456 | advisor: advisor@wisepocket.com / 123456</p>
-
-            <form id="loginForm">
+            <h1 class="section-title">Crear cuenta</h1>
+            <form id="registerForm">
+                <label>Nombre completo
+                    <input id="inputName" type="text" placeholder="Tu nombre completo" required>
+                </label>
                 <label>Email
                     <input id="inputEmail" type="email" placeholder="tu@email.com" required>
                 </label>
                 <label>Contrasena
-                    <input id="inputPassword" type="password" placeholder="******" required>
+                    <input id="inputPassword" type="password" placeholder="Minimo 6 caracteres" required>
                 </label>
-                <button id="btnLogin" class="btn btn-primary" type="button">Entrar</button>
+                <label>Confirmar contrasena
+                    <input id="inputConfirmPassword" type="password" placeholder="Repeti tu contrasena" required>
+                </label>
+                <button id="btnRegister" type="button" class="btn btn-primary">Registrarse</button>
             </form>
-
             <div id="errorMessage" class="error-message hidden"></div>
-            <p class="auth-footer">No tenes cuenta? <a href="register.html">Registrarte</a></p>
+            <div id="successMessage" class="success-message hidden"></div>
+            <p class="auth-footer">Ya tenes cuenta? <a href="login.html">Iniciar sesion</a></p>
         </section>
     </main>
 
     <script src="../js/auth.js"></script>
     <script src="../js/api.js"></script>
     <script src="../js/ui.js"></script>
-    <script src="../js/login.js"></script>
+    <script src="../js/register.js"></script>
 </body>
 </html>

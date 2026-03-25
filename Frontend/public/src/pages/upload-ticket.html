@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WisePocket | Subir ticket</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+    <div id="appHeader"></div>
+    <main class="layout">
+        <section class="card">
+            <h1 class="section-title">Registrar nuevo gasto</h1>
+
+            <div style="display:flex;gap:.5rem;margin:.9rem 0;">
+                <button id="modeManual" type="button" class="btn btn-primary">Carga manual</button>
+                <button id="modeTicket" type="button" class="btn btn-secondary">Subir ticket</button>
+            </div>
+
+            <section id="ticketUploadArea" class="card hidden" style="margin-bottom:1rem;background:var(--surface-soft);">
+                <p class="section-subtitle">Arrastra una imagen o selecciona archivo (JPG/PNG/WEBP, max 5MB)</p>
+                <input id="inputTicketImage" type="file" accept="image/jpeg,image/png,image/webp">
+                <div style="margin:.7rem 0;"><img id="ticketPreview" class="hidden" alt="Preview" style="max-width:200px;border-radius:10px;"></div>
+                <button id="btnProcessTicket" type="button" class="btn btn-secondary hidden">Procesar con IA</button>
+                <p id="ticketProcessingStatus" class="section-subtitle"></p>
+            </section>
+
+            <form id="expenseForm">
+                <label>Comercio
+                    <input id="inputCommerce" type="text" placeholder="Ej: Supermercado Dia" maxlength="100" required>
+                </label>
+                <label>Fecha
+                    <input id="inputDate" type="date" required>
+                </label>
+                <label>Monto
+                    <input id="inputAmount" type="number" min="0" step="0.01" placeholder="0.00" required>
+                </label>
+                <label>Categoria
+                    <select id="selectCategory" required>
+                        <option value="" selected disabled>Selecciona una categoria</option>
+                    </select>
+                </label>
+                <label>Descripcion
+                    <textarea id="inputDescription" maxlength="300" placeholder="Descripcion opcional..."></textarea>
+                </label>
+                <button id="btnSaveExpense" type="button" class="btn btn-primary">Guardar gasto</button>
+            </form>
+            <div id="errorMessage" class="error-message hidden"></div>
+            <div id="successMessage" class="success-message hidden"></div>
+            <div id="postSuccessActions" class="hidden" style="margin-top:.8rem;display:flex;gap:.5rem;">
+                <button id="btnRegisterAnother" class="btn btn-secondary" type="button">Registrar otro gasto</button>
+                <a class="btn btn-primary" href="expenses.html">Ver mis gastos</a>
+            </div>
+        </section>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/layout.js"></script>
+    <script src="../js/upload-ticket.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WisePocket | Presupuestos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+    <div id="appHeader"></div>
+    <main class="layout grid-2">
+        <section class="card">
+            <h1 class="section-title">Mis presupuestos</h1>
+            <div class="grid-2" style="margin-top:.7rem;">
+                <label>Mes<select id="selectBudgetMonth"></select></label>
+                <label>Ano<select id="selectBudgetYear"></select></label>
+            </div>
+            <div id="budgetsProgressContainer" style="margin-top:.8rem;"></div>
+            <div id="budgetMessage" class="hidden"></div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title" id="budgetFormTitle">Nuevo presupuesto</h2>
+            <form id="budgetForm">
+                <label>Categoria<select id="selectBudgetCategory"></select></label>
+                <label>Monto limite<input id="inputBudgetAmount" type="number" min="0" step="0.01" required></label>
+                <div style="display:flex;gap:.5rem;">
+                    <button id="btnSaveBudget" class="btn btn-primary" type="button">Guardar presupuesto</button>
+                    <button id="btnCancelBudget" class="btn btn-secondary hidden" type="button">Cancelar</button>
+                </div>
+            </form>
+            <div id="budgetFormMessage" class="hidden"></div>
+        </section>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/layout.js"></script>
+    <script src="../js/budgets.js"></script>
+</body>
+</html>

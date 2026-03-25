@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WisePocket | Panel asesor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+    <div id="appHeader"></div>
+    <main class="layout">
+        <section class="card">
+            <h1 class="section-title">Panel del asesor</h1>
+            <section class="grid-4" style="margin-top:.8rem;">
+                <article class="card"><p class="section-subtitle">Total usuarios</p><p id="cardTotalUsers" class="value-big">Cargando...</p></article>
+                <article class="card"><p class="section-subtitle">Promedio gasto</p><p id="cardAvgExpense" class="value-big">Cargando...</p></article>
+                <article class="card"><p class="section-subtitle">Top gastador</p><p id="cardTopSpender" class="value-big">Cargando...</p></article>
+                <article class="card"><p class="section-subtitle">Categoria mas comun</p><p id="cardTopCategory" class="value-big">Cargando...</p></article>
+            </section>
+
+            <label style="margin-top:.8rem;">Buscar usuario
+                <input id="searchUsers" type="text" placeholder="Buscar por nombre o email...">
+            </label>
+
+            <div class="table-wrap" id="usersTableWrap" style="margin-top:.8rem;"></div>
+            <div id="advisorError" class="error-message hidden"></div>
+        </section>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/layout.js"></script>
+    <script src="../js/advisor-panel.js"></script>
+</body>
+</html>

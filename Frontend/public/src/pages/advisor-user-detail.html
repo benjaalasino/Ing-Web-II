@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WisePocket | Detalle de usuario</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/app.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="appHeader"></div>
+    <main class="layout">
+        <a href="advisor-panel.html">&larr; Volver al panel</a>
+        <section class="card" style="margin-top:.8rem;">
+            <h1 id="userTitle" class="section-title">Usuario</h1>
+            <p id="userSubtitle" class="section-subtitle"></p>
+        </section>
+
+        <section class="grid-4" style="margin-top:1rem;">
+            <article class="card"><p class="section-subtitle">Gasto total del mes</p><p id="userCardMonth" class="value-big">-</p></article>
+            <article class="card"><p class="section-subtitle">Promedio mensual</p><p id="userCardAverage" class="value-big">-</p></article>
+            <article class="card"><p class="section-subtitle">Categoria dominante</p><p id="userCardTopCategory" class="value-big">-</p></article>
+            <article class="card"><p class="section-subtitle">Gastos inusuales</p><p id="userCardUnusual" class="value-big">-</p></article>
+        </section>
+
+        <section class="grid-2" style="margin-top:1rem;">
+            <article class="card"><h2 class="section-title">Categorias</h2><canvas id="userChartCategory"></canvas></article>
+            <article class="card"><h2 class="section-title">Evolucion mensual</h2><canvas id="userChartMonthly"></canvas></article>
+        </section>
+
+        <section class="grid-2" style="margin-top:1rem;">
+            <article class="card">
+                <h2 class="section-title">Gastos del usuario</h2>
+                <div id="userExpensesTable" class="table-wrap"></div>
+            </article>
+            <article class="card" id="patternsSection">
+                <h2 class="section-title">Patrones detectados</h2>
+                <div id="patternsContent"></div>
+            </article>
+        </section>
+
+        <section class="grid-2" style="margin-top:1rem;">
+            <article class="card" id="recommendationsSection">
+                <h2 class="section-title">Recomendaciones</h2>
+                <div id="recommendationsList"></div>
+            </article>
+            <article class="card">
+                <h2 class="section-title">Enviar recomendacion</h2>
+                <form id="recommendationForm">
+                    <label>Texto<textarea id="inputRecommendationText" minlength="10" maxlength="500" required></textarea></label>
+                    <button id="btnSendRecommendation" class="btn btn-primary" type="button">Enviar recomendacion</button>
+                </form>
+                <div id="recommendationMessage" class="hidden"></div>
+            </article>
+        </section>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/layout.js"></script>
+    <script src="../js/advisor-user-detail.js"></script>
+</body>
+</html>

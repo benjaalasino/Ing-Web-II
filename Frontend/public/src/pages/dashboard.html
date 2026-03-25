@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WisePocket | Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/app.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="appHeader"></div>
+    <main class="layout">
+        <section class="card" style="margin-bottom:1rem;">
+            <h1 class="section-title" id="welcomeTitle">Bienvenido/a</h1>
+            <p class="section-subtitle" id="welcomeSubtitle"></p>
+        </section>
+
+        <section class="grid-4" style="margin-bottom:1rem;">
+            <article class="card"><p class="section-subtitle">Total mes</p><p class="value-big" id="cardTotalMonth">Cargando...</p></article>
+            <article class="card"><p class="section-subtitle">Top categoria</p><p class="value-big" id="cardTopCategory">Cargando...</p></article>
+            <article class="card"><p class="section-subtitle">Cantidad de gastos</p><p class="value-big" id="cardExpenseCount">Cargando...</p></article>
+            <article class="card"><p class="section-subtitle">Uso de presupuesto</p><p class="value-big" id="cardBudgetStatus">Cargando...</p></article>
+        </section>
+
+        <section class="grid-2" style="margin-bottom:1rem;">
+            <article class="card">
+                <h2 class="section-title">Gastos por categoria</h2>
+                <canvas id="chartCategory"></canvas>
+                <p id="chartCategoryEmpty" class="section-subtitle hidden">No hay gastos registrados este mes.</p>
+            </article>
+            <article class="card">
+                <h2 class="section-title">Evolucion mensual</h2>
+                <canvas id="chartMonthly"></canvas>
+                <p id="chartMonthlyEmpty" class="section-subtitle hidden">No hay suficiente historial para mostrar.</p>
+            </article>
+        </section>
+
+        <section class="grid-2">
+            <article class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h2 class="section-title">Ultimos gastos</h2>
+                    <a href="expenses.html">Ver todos los gastos</a>
+                </div>
+                <div id="recentExpensesContainer" class="table-wrap"></div>
+            </article>
+            <article class="card">
+                <h2 class="section-title">Recomendaciones</h2>
+                <div id="recommendationsContainer"></div>
+            </article>
+        </section>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/layout.js"></script>
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
