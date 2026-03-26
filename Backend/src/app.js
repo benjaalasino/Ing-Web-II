@@ -14,6 +14,15 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.get('/', (req, res) => {
+	res.status(200).json({
+		ok: true,
+		message: 'API desplegada correctamente',
+		docs: '/api/health'
+	});
+});
+
 app.use('/api', healthRoutes);
 app.use('/api', authRoutes);
 app.use('/api', profileRoutes);
