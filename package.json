@@ -1,4 +1,10 @@
 {
+  "name": "ing-web-ii",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix Backend start",
+    "dev": "npm --prefix Backend run dev"
+  },
   "dependencies": {
     "next-cloudinary": "^6.17.5"
   }
