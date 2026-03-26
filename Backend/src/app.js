@@ -34,12 +34,28 @@ if (frontendRoot) {
 		app.get('/pages/index.html', (req, res) => {
 			res.sendFile(frontendIndex);
 		});
+
+		app.get('/:page.html', (req, res, next) => {
+			const requestedPage = req.params.page;
+
+			if (!requestedPage) {
+				return next();
+			}
+
+			const requestedPath = path.join(frontendRoot, 'pages', `${requestedPage}.html`);
+
+			if (fs.existsSync(requestedPath)) {
+				return res.sendFile(requestedPath);
+			}
+
+			return next();
+		});
 	}
 }
 
 app.get('/', (req, res) => {
 	if (frontendIndex && fs.existsSync(frontendIndex)) {
-		return res.sendFile(frontendIndex);
+		return res.redirect('/pages/index.html');
 	}
 
 	return res.status(200).json({
