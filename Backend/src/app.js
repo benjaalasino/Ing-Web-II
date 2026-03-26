@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
 const path = require('path');
 const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -12,14 +13,40 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const { errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
-const frontendRoot = path.resolve(__dirname, '../../Frontend/public/src');
+
+const frontendPathCandidates = [
+	path.resolve(process.cwd(), 'Frontend/public/src'),
+	path.resolve(process.cwd(), '../Frontend/public/src'),
+	path.resolve(__dirname, '../../Frontend/public/src'),
+	path.resolve(__dirname, '../public/src')
+];
+
+const frontendRoot = frontendPathCandidates.find((candidate) => fs.existsSync(candidate));
+const frontendIndex = frontendRoot ? path.join(frontendRoot, 'pages', 'index.html') : null;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(frontendRoot));
+
+if (frontendRoot) {
+	app.use(express.static(frontendRoot));
+
+	if (fs.existsSync(frontendIndex)) {
+		app.get('/pages/index.html', (req, res) => {
+			res.sendFile(frontendIndex);
+		});
+	}
+}
 
 app.get('/', (req, res) => {
-	res.redirect('/pages/index.html');
+	if (frontendIndex && fs.existsSync(frontendIndex)) {
+		return res.sendFile(frontendIndex);
+	}
+
+	return res.status(200).json({
+		ok: true,
+		message: 'API desplegada correctamente',
+		docs: '/api/health'
+	});
 });
 
 app.get('/api', (req, res) => {

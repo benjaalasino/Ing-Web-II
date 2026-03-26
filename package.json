@@ -2,6 +2,7 @@
   "name": "ing-web-ii",
   "private": true,
   "scripts": {
+    "postinstall": "npm --prefix Backend install",
     "start": "npm --prefix Backend start",
     "dev": "npm --prefix Backend run dev"
   },
