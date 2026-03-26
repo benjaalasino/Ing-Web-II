@@ -1,4 +1,13 @@
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = (() => {
+    const { hostname, port, origin } = window.location;
+    const runningLocally = hostname === 'localhost' || hostname === '127.0.0.1';
+
+    if (runningLocally && port && port !== '3000') {
+        return 'http://localhost:3000/api';
+    }
+
+    return `${origin}/api`;
+})();
 
 const apiFetch = async (endpoint, options = {}) => {
     const token = window.auth.getToken();

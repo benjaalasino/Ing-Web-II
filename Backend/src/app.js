@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const healthRoutes = require('./routes/healthRoutes');
 const authRoutes = require('./routes/authRoutes');
 const profileRoutes = require('./routes/profileRoutes');
@@ -11,11 +12,17 @@ const ticketRoutes = require('./routes/ticketRoutes');
 const { errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
+const frontendRoot = path.resolve(__dirname, '../../Frontend/public/src');
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static(frontendRoot));
 
 app.get('/', (req, res) => {
+	res.redirect('/pages/index.html');
+});
+
+app.get('/api', (req, res) => {
 	res.status(200).json({
 		ok: true,
 		message: 'API desplegada correctamente',
