@@ -45,12 +45,12 @@ btnSaveProfile.addEventListener('click', async () => {
 
 btnChangePassword.addEventListener('click', async () => {
     if (inputNewPassword.value.length < 6) {
-        show(passwordMessage, 'La nueva contrasena debe tener al menos 6 caracteres.', 'error');
+        show(passwordMessage, 'La nueva contraseña debe tener al menos 6 caracteres.', 'error');
         return;
     }
 
     if (inputNewPassword.value !== inputConfirmNewPassword.value) {
-        show(passwordMessage, 'Las contrasenas no coinciden.', 'error');
+        show(passwordMessage, 'Las contraseñas no coinciden.', 'error');
         return;
     }
 
@@ -66,7 +66,7 @@ btnChangePassword.addEventListener('click', async () => {
         inputCurrentPassword.value = '';
         inputNewPassword.value = '';
         inputConfirmNewPassword.value = '';
-        show(passwordMessage, 'Contrasena actualizada.', 'success');
+        show(passwordMessage, 'Contraseña actualizada.', 'success');
     } catch (error) {
         show(passwordMessage, error.message, 'error');
     }

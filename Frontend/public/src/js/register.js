@@ -30,11 +30,11 @@ const validate = () => {
     }
 
     if (password.length < 6) {
-        return 'La contrasena debe tener al menos 6 caracteres.';
+        return 'La contraseña debe tener al menos 6 caracteres.';
     }
 
     if (password !== confirm) {
-        return 'Las contrasenas no coinciden.';
+        return 'Las contraseñas no coinciden.';
     }
 
     return null;

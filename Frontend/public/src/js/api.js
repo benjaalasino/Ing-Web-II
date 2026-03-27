@@ -37,7 +37,7 @@ const apiFetch = async (endpoint, options = {}) => {
     if (!response.ok) {
         if (response.status === 401) {
             window.auth.logout();
-            throw new Error('Sesion expirada.');
+            throw new Error('Sesión expirada.');
         }
 
         throw new Error(data.message || 'No se pudo completar la solicitud.');

@@ -50,8 +50,8 @@ const renderHeader = (activeHref) => {
     container.innerHTML = `
         <aside class="app-shell">
             <a class="brand" href="${role === 'advisor' ? 'advisor-panel.html' : 'dashboard.html'}">
-                <span class="brand-mark">WP</span>
-                <span>WisePocket</span>
+                <img src="../img/logo.png" alt="Logo" style="height:1.75rem">
+                <span>Cuentas Claras</span>
             </a>
             <div>
                 <p class="menu-title">Menu</p>
@@ -82,13 +82,13 @@ const renderHeader = (activeHref) => {
             <div style="display:flex;align-items:center;gap:.7rem;">
                 <button id="btnNavToggle" class="mobile-menu-btn" type="button" aria-label="Abrir menu">☰</button>
                 <div>
-                    <p class="page-eyebrow">WisePocket</p>
+                    <p class="page-eyebrow">Cuentas Claras</p>
                     <h1 class="page-title">${pageTitle}</h1>
                 </div>
             </div>
             <div class="header-right">
                 <span class="user-pill">${name}</span>
-                <button id="btnLogout" class="btn btn-secondary" type="button">Cerrar sesion</button>
+                <button id="btnLogout" class="btn btn-secondary" type="button">Cerrar sesión</button>
             </div>
         </header>
     `;
