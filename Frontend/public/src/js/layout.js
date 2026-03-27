@@ -50,7 +50,7 @@ const renderHeader = (activeHref) => {
     container.innerHTML = `
         <aside class="app-shell">
             <a class="brand" href="${role === 'advisor' ? 'advisor-panel.html' : 'dashboard.html'}">
-                <img src="../img/logo.png" alt="Logo" style="height:1.75rem">
+                <img src="../img/logo.png" alt="Logo" style="height:2.5rem;width:auto">
                 <span>Cuentas Claras</span>
             </a>
             <div>
