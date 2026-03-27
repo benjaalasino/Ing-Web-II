@@ -33,6 +33,22 @@
             </form>
             <div id="passwordMessage" class="hidden"></div>
         </section>
+
+        <section class="card" id="mpSection">
+            <h2 class="section-title">MercadoPago</h2>
+            <p class="section-subtitle">Conectá tu cuenta para importar tus pagos automáticamente.</p>
+            <div id="mpStatus" style="margin:.75rem 0">
+                <p style="color:var(--muted)">Cargando estado...</p>
+            </div>
+            <div id="mpTokenForm" class="hidden">
+                <label>Access Token
+                    <input id="inputMpToken" type="password" placeholder="APP_USR-..." required>
+                </label>
+                <p style="font-size:.75rem;color:var(--muted);margin:.25rem 0 .75rem">Obtenelo en <a href="https://www.mercadopago.com.ar/developers/panel/app" target="_blank" rel="noopener" style="color:var(--primary)">mercadopago.com.ar/developers</a> → Tu aplicación → Credenciales de producción.</p>
+                <button id="btnMpSaveToken" class="btn btn-primary" type="button">Conectar</button>
+            </div>
+            <div id="mpMessage" class="hidden"></div>
+        </section>
     </main>
 
     <script src="../js/auth.js"></script>

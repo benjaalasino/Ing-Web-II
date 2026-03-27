@@ -10,6 +10,7 @@ const budgetRoutes = require('./routes/budgetRoutes');
 const recommendationRoutes = require('./routes/recommendationRoutes');
 const userRoutes = require('./routes/userRoutes');
 const ticketRoutes = require('./routes/ticketRoutes');
+const mercadoPagoRoutes = require('./routes/mercadoPagoRoutes');
 const { errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
@@ -81,6 +82,7 @@ app.use('/api', budgetRoutes);
 app.use('/api', recommendationRoutes);
 app.use('/api', userRoutes);
 app.use('/api', ticketRoutes);
+app.use('/api', mercadoPagoRoutes);
 app.use(errorHandler);
 
 module.exports = app;

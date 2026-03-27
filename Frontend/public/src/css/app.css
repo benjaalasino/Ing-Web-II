@@ -61,9 +61,10 @@ body.has-app-shell .layout{max-width:none;margin:0;margin-left:var(--sidebar-w);
     overflow-y:auto;z-index:100;
 }
 .brand{
-    display:inline-flex;align-items:center;gap:.5rem;color:var(--text);
+    display:inline-flex;align-items:center;gap:0;color:var(--text);
     font-weight:700;text-decoration:none;padding:.4rem .5rem;font-size:1.125rem;
 }
+.brand-logo{height:5rem;width:auto;flex-shrink:0}
 .brand-mark{
     width:2rem;height:2rem;border-radius:50%;background:var(--primary);
     color:var(--primary-fg);display:grid;place-items:center;font-size:.7rem;
@@ -169,6 +170,7 @@ body.has-app-shell .layout{max-width:none;margin:0;margin-left:var(--sidebar-w);
 
 /* ── Grids ── */
 .grid-4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem}
+.grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
 .grid-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
 
 /* ── Badge ── */
@@ -227,10 +229,38 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)
     .app-topbar{left:0}
     body.has-app-shell .layout{margin-left:0}
     .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .value-big{font-size:1.5rem}
+    .section-title{font-size:1rem}
+    canvas{max-height:280px}
 }
 @media(max-width:640px){
-    .layout,body.has-app-shell .layout{padding:5.25rem 1rem 1rem}
+    .layout,body.has-app-shell .layout{padding:5rem .75rem 1rem}
+    .brand-logo{height:4rem!important}
     .header-right .user-pill{display:none}
-    .grid-2,.grid-4{grid-template-columns:1fr}
-    .card{padding:1.25rem}
+    .grid-2,.grid-3,.grid-4{grid-template-columns:1fr}
+    .card{padding:1rem}
+    .value-big{font-size:1.25rem}
+    .page-title{font-size:1.05rem}
+    .page-eyebrow{font-size:.6rem}
+    .app-topbar{height:3.75rem;padding:0 .75rem}
+    .stat-card .stat-arrow{width:1.5rem;height:1.5rem;top:.75rem;right:.75rem}
+    .stat-arrow svg{width:.7rem;height:.7rem}
+    .section-title{font-size:.95rem}
+    .section-subtitle{font-size:.7rem}
+    .btn{padding:.45rem .75rem;font-size:.8rem}
+    table{font-size:.78rem}
+    th,td{padding:.5rem .4rem}
+    .modal .card{padding:1rem}
+    canvas{max-height:220px}
+    label{font-size:.8rem}
+    input,select,textarea{padding:.5rem .625rem;font-size:.8rem}
+}
+@media(max-width:400px){
+    .layout,body.has-app-shell .layout{padding:4.75rem .5rem .75rem}
+    .brand{font-size:.95rem;gap:.25rem}
+    .brand-logo{height:3.5rem!important}
+    .card{padding:.875rem;border-radius:var(--radius-lg)}
+    .value-big{font-size:1.1rem}
+    .nav-links a{padding:.4rem .5rem;font-size:.8rem}
 }

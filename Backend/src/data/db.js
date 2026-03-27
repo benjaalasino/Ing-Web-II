@@ -98,11 +98,14 @@ const db = {
     expenses: seededExpenses,
     budgets: seededBudgets,
     recommendations: seededRecommendations,
+    mpTokens: [],
+    mpPayments: [],
     counters: {
         users: seededUsers.length + 1,
         expenses: seededExpenses.length + 1,
         budgets: seededBudgets.length + 1,
-        recommendations: seededRecommendations.length + 1
+        recommendations: seededRecommendations.length + 1,
+        mpPayments: 1
     }
 };
 

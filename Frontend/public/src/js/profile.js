@@ -73,3 +73,62 @@ btnChangePassword.addEventListener('click', async () => {
 });
 
 loadProfile().catch((error) => show(profileMessage, error.message, 'error'));
+
+/* ── MercadoPago connection ── */
+const mpStatus = document.getElementById('mpStatus');
+const mpMessage = document.getElementById('mpMessage');
+const mpTokenForm = document.getElementById('mpTokenForm');
+const inputMpToken = document.getElementById('inputMpToken');
+const btnMpSaveToken = document.getElementById('btnMpSaveToken');
+
+const renderMpStatus = async () => {
+    try {
+        const { connected } = await window.apiFetch('/mercadopago/status');
+        if (connected) {
+            mpStatus.innerHTML = `
+                <p style="color:var(--primary);font-weight:600">✓ Cuenta conectada</p>
+                <p style="font-size:.8rem;color:var(--muted);margin-top:.25rem">Tus gastos se registran automáticamente vía webhook.</p>
+                <div style="margin-top:.75rem">
+                    <button id="btnMpDisconnect" class="btn btn-secondary" type="button">Desconectar</button>
+                </div>`;
+            mpTokenForm.classList.add('hidden');
+            document.getElementById('btnMpDisconnect').addEventListener('click', disconnectMp);
+        } else {
+            mpStatus.innerHTML = '';
+            mpTokenForm.classList.remove('hidden');
+        }
+    } catch (error) {
+        mpStatus.innerHTML = `<p style="color:var(--danger)">No se pudo verificar el estado.</p>`;
+    }
+};
+
+btnMpSaveToken.addEventListener('click', async () => {
+    const token = inputMpToken.value.trim();
+    if (!token) {
+        show(mpMessage, 'Ingresá tu Access Token.', 'error');
+        return;
+    }
+    try {
+        const data = await window.apiFetch('/mercadopago/connect', {
+            method: 'POST',
+            body: JSON.stringify({ accessToken: token })
+        });
+        show(mpMessage, data.message, 'success');
+        inputMpToken.value = '';
+        renderMpStatus();
+    } catch (error) {
+        show(mpMessage, error.message, 'error');
+    }
+});
+
+const disconnectMp = async () => {
+    try {
+        await window.apiFetch('/mercadopago/disconnect', { method: 'POST' });
+        show(mpMessage, 'Cuenta desconectada.', 'success');
+        renderMpStatus();
+    } catch (error) {
+        show(mpMessage, error.message, 'error');
+    }
+};
+
+renderMpStatus();
