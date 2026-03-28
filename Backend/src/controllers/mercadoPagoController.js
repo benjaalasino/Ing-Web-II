@@ -31,16 +31,33 @@ const getPayments = (req, res) => {
 };
 
 const handleWebhook = async (req, res) => {
+    console.log('[MP Webhook] Body:', JSON.stringify(req.body));
+    console.log('[MP Webhook] Query:', JSON.stringify(req.query));
     res.status(200).json({ ok: true });
 
-    const { type, data } = req.body;
+    // Format 1 (Webhooks): { type: "payment", data: { id: "123" } }
+    // Format 2 (IPN): ?topic=payment&id=123  OR  { topic: "payment", id: "123" }
+    let paymentId = null;
 
-    if (type === 'payment' && data?.id) {
+    if (req.body?.data?.id) {
+        paymentId = req.body.data.id;
+    } else if (req.body?.topic === 'payment' && req.body?.id) {
+        paymentId = req.body.id;
+    } else if (req.query?.topic === 'payment' && req.query?.id) {
+        paymentId = req.query.id;
+    } else if (req.query?.['data.id']) {
+        paymentId = req.query['data.id'];
+    }
+
+    if (paymentId) {
         try {
-            await mpService.processWebhookPayment(data.id);
-        } catch {
-            // Silently ignore webhook processing errors
+            const result = await mpService.processWebhookPayment(paymentId);
+            console.log('[MP Webhook] Result:', JSON.stringify(result));
+        } catch (err) {
+            console.error('[MP Webhook] Error:', err.message);
         }
+    } else {
+        console.log('[MP Webhook] No payment ID found, ignoring.');
     }
 };
 
