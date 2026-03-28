@@ -1,26 +1,32 @@
-const { db, getNextId } = require('../data/db');
+const { pool } = require('../data/db');
 
-const getRecommendations = (req, res) => {
+const mapRec = (row) => ({
+    id: row.id,
+    userId: row.user_id,
+    advisorId: row.advisor_id,
+    text: row.text,
+    createdAt: row.created_at
+});
+
+const getRecommendations = async (req, res) => {
     let ownerId = req.auth.userId;
-
     if (req.auth.role === 'advisor' && req.query.userId) {
         ownerId = Number(req.query.userId);
     }
 
-    const limit = req.query.limit ? Number(req.query.limit) : null;
+    let sql = 'SELECT * FROM recommendations WHERE user_id = $1 ORDER BY created_at DESC';
+    const params = [ownerId];
 
-    let items = db.recommendations
-        .filter((item) => item.userId === ownerId)
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-    if (limit) {
-        items = items.slice(0, limit);
+    if (req.query.limit) {
+        sql += ' LIMIT $2';
+        params.push(Number(req.query.limit));
     }
 
-    res.json(items);
+    const { rows } = await pool.query(sql, params);
+    res.json(rows.map(mapRec));
 };
 
-const createRecommendation = (req, res) => {
+const createRecommendation = async (req, res) => {
     if (req.auth.role !== 'advisor') {
         res.status(403).json({ statusCode: 403, message: 'Solo asesores pueden crear recomendaciones.' });
         return;
@@ -38,22 +44,18 @@ const createRecommendation = (req, res) => {
         return;
     }
 
-    const targetUser = db.users.find((item) => item.id === Number(userId) && item.role === 'user');
-    if (!targetUser) {
+    const { rows: userRows } = await pool.query("SELECT id FROM users WHERE id = $1 AND role = 'user'", [Number(userId)]);
+    if (userRows.length === 0) {
         res.status(404).json({ statusCode: 404, message: 'Usuario destino no encontrado.' });
         return;
     }
 
-    const recommendation = {
-        id: getNextId('recommendations'),
-        userId: Number(userId),
-        advisorId: req.auth.userId,
-        text: String(text).trim(),
-        createdAt: new Date().toISOString()
-    };
+    const { rows } = await pool.query(
+        'INSERT INTO recommendations (user_id, advisor_id, text) VALUES ($1, $2, $3) RETURNING *',
+        [Number(userId), req.auth.userId, String(text).trim()]
+    );
 
-    db.recommendations.push(recommendation);
-    res.status(201).json(recommendation);
+    res.status(201).json(mapRec(rows[0]));
 };
 
 module.exports = {

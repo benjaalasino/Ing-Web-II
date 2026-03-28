@@ -1,4 +1,4 @@
-const { db, getNextId } = require('../data/db');
+const { pool } = require('../data/db');
 const { comparePassword, hashPassword, signToken } = require('../utils/authUtils');
 
 const register = async (req, res) => {
@@ -20,23 +20,19 @@ const register = async (req, res) => {
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
-    const alreadyExists = db.users.some((user) => user.email.toLowerCase() === normalizedEmail);
+    const { rows: existing } = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
 
-    if (alreadyExists) {
+    if (existing.length > 0) {
         res.status(400).json({ statusCode: 400, message: 'El email ya esta registrado.' });
         return;
     }
 
-    const newUser = {
-        id: getNextId('users'),
-        name: String(name).trim(),
-        email: normalizedEmail,
-        password: await hashPassword(String(password)),
-        role: 'user',
-        createdAt: new Date().toISOString()
-    };
+    const hashedPw = await hashPassword(String(password));
+    await pool.query(
+        'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)',
+        [String(name).trim(), normalizedEmail, hashedPw, 'user']
+    );
 
-    db.users.push(newUser);
     res.status(201).json({
         statusCode: 201,
         message: 'Cuenta creada correctamente.'
@@ -51,7 +47,8 @@ const login = async (req, res) => {
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
-    const user = db.users.find((item) => item.email.toLowerCase() === normalizedEmail);
+    const { rows } = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [normalizedEmail]);
+    const user = rows[0];
 
     if (!user) {
         res.status(401).json({ statusCode: 401, message: 'Credenciales invalidas.' });

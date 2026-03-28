@@ -1,7 +1,7 @@
 const mpService = require('../services/mercadoPagoService');
 
-const getConnectionStatus = (req, res) => {
-    const connected = mpService.isConnected(req.auth.userId);
+const getConnectionStatus = async (req, res) => {
+    const connected = await mpService.isConnected(req.auth.userId);
     res.json({ connected });
 };
 
@@ -19,14 +19,14 @@ const connect = async (req, res) => {
     }
 };
 
-const disconnect = (req, res) => {
-    mpService.disconnect(req.auth.userId);
+const disconnect = async (req, res) => {
+    await mpService.disconnect(req.auth.userId);
     res.json({ statusCode: 200, message: 'MercadoPago desconectado.' });
 };
 
-const getPayments = (req, res) => {
+const getPayments = async (req, res) => {
     const { category, month, year } = req.query;
-    const items = mpService.getStoredPayments(req.auth.userId, { category, month, year });
+    const items = await mpService.getStoredPayments(req.auth.userId, { category, month, year });
     res.json(items);
 };
 

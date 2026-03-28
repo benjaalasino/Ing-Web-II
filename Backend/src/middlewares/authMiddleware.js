@@ -1,7 +1,7 @@
-const { db } = require('../data/db');
+const { pool } = require('../data/db');
 const { verifyToken } = require('../utils/authUtils');
 
-const requireAuth = (req, res, next) => {
+const requireAuth = async (req, res, next) => {
     const header = req.headers.authorization || '';
     const [, token] = header.split(' ');
 
@@ -12,13 +12,14 @@ const requireAuth = (req, res, next) => {
 
     try {
         const payload = verifyToken(token);
-        const user = db.users.find((item) => item.id === payload.userId);
+        const { rows } = await pool.query('SELECT id, role, name FROM users WHERE id = $1', [payload.userId]);
 
-        if (!user) {
+        if (rows.length === 0) {
             res.status(401).json({ statusCode: 401, message: 'Sesion invalida.' });
             return;
         }
 
+        const user = rows[0];
         req.auth = {
             userId: user.id,
             role: user.role,

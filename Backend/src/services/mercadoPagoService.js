@@ -1,33 +1,32 @@
-const { db, getNextId } = require('../data/db');
+const { pool } = require('../data/db');
 
 /* ── Token management ── */
 const saveToken = async (userId, accessToken) => {
-    // Fetch MP user ID to identify the user in webhooks
     const res = await fetch('https://api.mercadopago.com/users/me', {
         headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!res.ok) throw new Error('Access Token inválido. Verificá que sea correcto.');
 
     const mpUser = await res.json();
-    const existing = db.mpTokens.find((t) => t.userId === userId);
-    const entry = { userId, accessToken, mpUserId: mpUser.id, createdAt: new Date().toISOString() };
 
-    if (existing) {
-        Object.assign(existing, entry);
-    } else {
-        db.mpTokens.push(entry);
-    }
-    return entry;
+    await pool.query(
+        `INSERT INTO mp_tokens (user_id, access_token, mp_user_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (user_id) DO UPDATE SET access_token = $2, mp_user_id = $3, created_at = NOW()`,
+        [userId, accessToken, String(mpUser.id)]
+    );
+
+    return { userId, mpUserId: mpUser.id };
 };
 
-const isConnected = (userId) => {
-    return db.mpTokens.some((t) => t.userId === userId);
+const isConnected = async (userId) => {
+    const { rows } = await pool.query('SELECT id FROM mp_tokens WHERE user_id = $1', [userId]);
+    return rows.length > 0;
 };
 
-const disconnect = (userId) => {
-    const idx = db.mpTokens.findIndex((t) => t.userId === userId);
-    if (idx >= 0) db.mpTokens.splice(idx, 1);
-    db.mpPayments = db.mpPayments.filter((p) => p.userId !== userId);
+const disconnect = async (userId) => {
+    await pool.query('DELETE FROM mp_payments WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM mp_tokens WHERE user_id = $1', [userId]);
 };
 
 /* ── Categorization ── */
@@ -43,29 +42,50 @@ const categorizeMpPayment = (description) => {
 };
 
 /* ── Stored payments ── */
-const getStoredPayments = (userId, filters = {}) => {
-    let items = db.mpPayments.filter((p) => p.userId === userId);
+const getStoredPayments = async (userId, filters = {}) => {
+    const conditions = ['user_id = $1'];
+    const params = [userId];
+    let idx = 2;
 
     if (filters.category) {
-        items = items.filter((p) => p.category === filters.category);
+        conditions.push(`category = $${idx++}`);
+        params.push(filters.category);
     }
     if (filters.month) {
-        items = items.filter((p) => new Date(p.date).getMonth() + 1 === Number(filters.month));
+        conditions.push(`EXTRACT(MONTH FROM date) = $${idx++}`);
+        params.push(Number(filters.month));
     }
     if (filters.year) {
-        items = items.filter((p) => new Date(p.date).getFullYear() === Number(filters.year));
+        conditions.push(`EXTRACT(YEAR FROM date) = $${idx++}`);
+        params.push(Number(filters.year));
     }
 
-    items.sort((a, b) => new Date(b.date) - new Date(a.date));
-    return items;
+    const { rows } = await pool.query(
+        `SELECT * FROM mp_payments WHERE ${conditions.join(' AND ')} ORDER BY date DESC`,
+        params
+    );
+
+    return rows.map((r) => ({
+        id: r.id,
+        userId: r.user_id,
+        mpPaymentId: r.mp_payment_id,
+        description: r.description,
+        amount: Number(r.amount),
+        date: r.date instanceof Date ? r.date.toISOString().slice(0, 10) : r.date,
+        category: r.category,
+        paymentMethod: r.payment_method,
+        createdAt: r.created_at
+    }));
 };
 
 /* ── Webhook processing ── */
 const processWebhookPayment = async (paymentId) => {
-    for (const tokenEntry of db.mpTokens) {
+    const { rows: tokens } = await pool.query('SELECT * FROM mp_tokens');
+
+    for (const tokenEntry of tokens) {
         try {
             const response = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-                headers: { Authorization: `Bearer ${tokenEntry.accessToken}` }
+                headers: { Authorization: `Bearer ${tokenEntry.access_token}` }
             });
 
             if (!response.ok) continue;
@@ -73,30 +93,33 @@ const processWebhookPayment = async (paymentId) => {
             const payment = await response.json();
             if (payment.status !== 'approved') return { action: 'skipped', reason: 'not approved' };
 
-            // Only store expenses: the connected user must be the payer (not the collector)
-            const isExpense = payment.payer?.id === tokenEntry.mpUserId;
+            const isExpense = String(payment.payer?.id) === String(tokenEntry.mp_user_id);
             if (!isExpense) return { action: 'skipped', reason: 'not an expense' };
 
-            const alreadyExists = db.mpPayments.some(
-                (p) => p.userId === tokenEntry.userId && p.mpPaymentId === payment.id
+            // Check duplicate
+            const { rows: dup } = await pool.query(
+                'SELECT id FROM mp_payments WHERE user_id = $1 AND mp_payment_id = $2',
+                [tokenEntry.user_id, String(payment.id)]
             );
-            if (alreadyExists) return { action: 'skipped', reason: 'already exists' };
+            if (dup.length > 0) return { action: 'skipped', reason: 'already exists' };
 
             const description = payment.description || payment.additional_info?.items?.[0]?.title || 'Pago MercadoPago';
 
-            db.mpPayments.push({
-                id: getNextId('mpPayments'),
-                userId: tokenEntry.userId,
-                mpPaymentId: payment.id,
-                description,
-                amount: payment.transaction_amount,
-                date: payment.date_created.split('T')[0],
-                category: categorizeMpPayment(description),
-                paymentMethod: payment.payment_type_id || 'unknown',
-                createdAt: new Date().toISOString()
-            });
+            await pool.query(
+                `INSERT INTO mp_payments (user_id, mp_payment_id, description, amount, date, category, payment_method)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [
+                    tokenEntry.user_id,
+                    String(payment.id),
+                    description,
+                    payment.transaction_amount,
+                    payment.date_created.split('T')[0],
+                    categorizeMpPayment(description),
+                    payment.payment_type_id || 'unknown'
+                ]
+            );
 
-            return { action: 'created', userId: tokenEntry.userId };
+            return { action: 'created', userId: tokenEntry.user_id };
         } catch {
             continue;
         }

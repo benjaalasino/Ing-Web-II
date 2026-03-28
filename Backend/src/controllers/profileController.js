@@ -1,20 +1,22 @@
-const { db } = require('../data/db');
+const { pool } = require('../data/db');
 const { comparePassword, hashPassword } = require('../utils/authUtils');
 
-const getProfile = (req, res) => {
-    const user = db.users.find((item) => item.id === req.auth.userId);
+const getProfile = async (req, res) => {
+    const { rows } = await pool.query('SELECT id, name, email, role, created_at FROM users WHERE id = $1', [req.auth.userId]);
+    const user = rows[0];
 
     res.json({
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
-        createdAt: user.createdAt
+        createdAt: user.created_at
     });
 };
 
 const updateProfile = async (req, res) => {
-    const user = db.users.find((item) => item.id === req.auth.userId);
+    const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [req.auth.userId]);
+    const user = rows[0];
     const { name, email, password, currentPassword } = req.body;
 
     if (password !== undefined) {
@@ -34,7 +36,8 @@ const updateProfile = async (req, res) => {
             return;
         }
 
-        user.password = await hashPassword(String(password));
+        const hashedPw = await hashPassword(String(password));
+        await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPw, user.id]);
         res.json({ statusCode: 200, message: 'Contrasena actualizada.' });
         return;
     }
@@ -45,25 +48,22 @@ const updateProfile = async (req, res) => {
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
-    const duplicatedEmail = db.users.some((item) => item.id !== user.id && item.email.toLowerCase() === normalizedEmail);
+    const { rows: dupRows } = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1 AND id != $2', [normalizedEmail, user.id]);
 
-    if (duplicatedEmail) {
+    if (dupRows.length > 0) {
         res.status(400).json({ statusCode: 400, message: 'Ese email ya esta en uso.' });
         return;
     }
 
-    user.name = String(name).trim();
-    user.email = normalizedEmail;
+    const { rows: updated } = await pool.query(
+        'UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING id, name, email, role',
+        [String(name).trim(), normalizedEmail, user.id]
+    );
 
     res.json({
         statusCode: 200,
         message: 'Perfil actualizado.',
-        user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role
-        }
+        user: updated[0]
     });
 };
 

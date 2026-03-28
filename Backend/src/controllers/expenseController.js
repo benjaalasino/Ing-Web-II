@@ -1,4 +1,4 @@
-const { db, getNextId } = require('../data/db');
+const { pool } = require('../data/db');
 const { CATEGORIES } = require('../constants/categories');
 const { buildExpenseStats } = require('../utils/expenseStats');
 
@@ -11,39 +11,54 @@ const getExpenseOwnerId = (req) => {
     return req.auth.userId;
 };
 
-const getExpenses = (req, res) => {
+const mapExpense = (row) => ({
+    id: row.id,
+    userId: row.user_id,
+    commerce: row.commerce,
+    date: row.date instanceof Date ? row.date.toISOString().slice(0, 10) : row.date,
+    amount: Number(row.amount),
+    category: row.category,
+    description: row.description || '',
+    imageUrl: row.image_url,
+    createdAt: row.created_at
+});
+
+const getExpenses = async (req, res) => {
     const ownerId = getExpenseOwnerId(req);
     const { category, month, year, commerce, limit } = req.query;
 
-    let items = db.expenses.filter((expense) => expense.userId === ownerId);
+    const conditions = ['user_id = $1'];
+    const params = [ownerId];
+    let idx = 2;
 
     if (category) {
-        items = items.filter((expense) => expense.category === category);
+        conditions.push(`category = $${idx++}`);
+        params.push(category);
     }
-
     if (month) {
-        items = items.filter((expense) => new Date(expense.date).getMonth() + 1 === Number(month));
+        conditions.push(`EXTRACT(MONTH FROM date) = $${idx++}`);
+        params.push(Number(month));
     }
-
     if (year) {
-        items = items.filter((expense) => new Date(expense.date).getFullYear() === Number(year));
+        conditions.push(`EXTRACT(YEAR FROM date) = $${idx++}`);
+        params.push(Number(year));
     }
-
     if (commerce) {
-        const search = String(commerce).toLowerCase();
-        items = items.filter((expense) => expense.commerce.toLowerCase().includes(search));
+        conditions.push(`LOWER(commerce) LIKE $${idx++}`);
+        params.push(`%${String(commerce).toLowerCase()}%`);
     }
 
-    items.sort((a, b) => new Date(b.date) - new Date(a.date));
-
+    let sql = `SELECT * FROM expenses WHERE ${conditions.join(' AND ')} ORDER BY date DESC`;
     if (limit) {
-        items = items.slice(0, Number(limit));
+        sql += ` LIMIT $${idx}`;
+        params.push(Number(limit));
     }
 
-    res.json(items);
+    const { rows } = await pool.query(sql, params);
+    res.json(rows.map(mapExpense));
 };
 
-const createExpense = (req, res) => {
+const createExpense = async (req, res) => {
     const { commerce, date, amount, category, description, imageUrl = null } = req.body;
 
     if (!commerce || !date || amount === undefined || !category) {
@@ -69,31 +84,17 @@ const createExpense = (req, res) => {
         return;
     }
 
-    const newExpense = {
-        id: getNextId('expenses'),
-        userId: req.auth.userId,
-        commerce: String(commerce).trim(),
-        date,
-        amount: parsedAmount,
-        category,
-        description: description ? String(description).trim() : '',
-        imageUrl,
-        createdAt: new Date().toISOString()
-    };
+    const { rows } = await pool.query(
+        `INSERT INTO expenses (user_id, commerce, date, amount, category, description, image_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        [req.auth.userId, String(commerce).trim(), date, parsedAmount, category, description ? String(description).trim() : '', imageUrl]
+    );
 
-    db.expenses.push(newExpense);
-    res.status(201).json(newExpense);
+    res.status(201).json(mapExpense(rows[0]));
 };
 
-const updateExpense = (req, res) => {
+const updateExpense = async (req, res) => {
     const id = Number(req.params.id);
-    const expense = db.expenses.find((item) => item.id === id && item.userId === req.auth.userId);
-
-    if (!expense) {
-        res.status(404).json({ statusCode: 404, message: 'Gasto no encontrado.' });
-        return;
-    }
-
     const { commerce, date, amount, category, description } = req.body;
 
     if (!commerce || !date || amount === undefined || !category) {
@@ -112,32 +113,36 @@ const updateExpense = (req, res) => {
         return;
     }
 
-    expense.commerce = String(commerce).trim();
-    expense.date = date;
-    expense.amount = parsedAmount;
-    expense.category = category;
-    expense.description = description ? String(description).trim() : '';
+    const { rows } = await pool.query(
+        `UPDATE expenses SET commerce = $1, date = $2, amount = $3, category = $4, description = $5
+         WHERE id = $6 AND user_id = $7 RETURNING *`,
+        [String(commerce).trim(), date, parsedAmount, category, description ? String(description).trim() : '', id, req.auth.userId]
+    );
 
-    res.json(expense);
-};
-
-const deleteExpense = (req, res) => {
-    const id = Number(req.params.id);
-    const index = db.expenses.findIndex((item) => item.id === id && item.userId === req.auth.userId);
-
-    if (index < 0) {
+    if (rows.length === 0) {
         res.status(404).json({ statusCode: 404, message: 'Gasto no encontrado.' });
         return;
     }
 
-    db.expenses.splice(index, 1);
+    res.json(mapExpense(rows[0]));
+};
+
+const deleteExpense = async (req, res) => {
+    const id = Number(req.params.id);
+    const { rowCount } = await pool.query('DELETE FROM expenses WHERE id = $1 AND user_id = $2', [id, req.auth.userId]);
+
+    if (rowCount === 0) {
+        res.status(404).json({ statusCode: 404, message: 'Gasto no encontrado.' });
+        return;
+    }
+
     res.json({ statusCode: 200, message: 'Gasto eliminado.' });
 };
 
-const getExpenseStats = (req, res) => {
+const getExpenseStats = async (req, res) => {
     const ownerId = getExpenseOwnerId(req);
-    const items = db.expenses.filter((expense) => expense.userId === ownerId);
-    res.json(buildExpenseStats(items));
+    const { rows } = await pool.query('SELECT * FROM expenses WHERE user_id = $1', [ownerId]);
+    res.json(buildExpenseStats(rows.map(mapExpense)));
 };
 
 module.exports = {

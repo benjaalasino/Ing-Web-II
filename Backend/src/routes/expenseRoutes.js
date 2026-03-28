@@ -7,13 +7,14 @@ const {
     getExpenseStats
 } = require('../controllers/expenseController');
 const { requireAuth } = require('../middlewares/authMiddleware');
+const { asyncHandler } = require('../middlewares/asyncHandler');
 
 const router = express.Router();
 
-router.get('/expenses', requireAuth, getExpenses);
-router.get('/expenses/stats', requireAuth, getExpenseStats);
-router.post('/expenses', requireAuth, createExpense);
-router.put('/expenses/:id', requireAuth, updateExpense);
-router.delete('/expenses/:id', requireAuth, deleteExpense);
+router.get('/expenses', requireAuth, asyncHandler(getExpenses));
+router.get('/expenses/stats', requireAuth, asyncHandler(getExpenseStats));
+router.post('/expenses', requireAuth, asyncHandler(createExpense));
+router.put('/expenses/:id', requireAuth, asyncHandler(updateExpense));
+router.delete('/expenses/:id', requireAuth, asyncHandler(deleteExpense));
 
 module.exports = router;

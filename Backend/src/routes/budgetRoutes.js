@@ -7,13 +7,14 @@ const {
     getBudgetProgress
 } = require('../controllers/budgetController');
 const { requireAuth } = require('../middlewares/authMiddleware');
+const { asyncHandler } = require('../middlewares/asyncHandler');
 
 const router = express.Router();
 
-router.get('/budgets', requireAuth, getBudgets);
-router.get('/budgets/progress', requireAuth, getBudgetProgress);
-router.post('/budgets', requireAuth, createBudget);
-router.put('/budgets/:id', requireAuth, updateBudget);
-router.delete('/budgets/:id', requireAuth, deleteBudget);
+router.get('/budgets', requireAuth, asyncHandler(getBudgets));
+router.get('/budgets/progress', requireAuth, asyncHandler(getBudgetProgress));
+router.post('/budgets', requireAuth, asyncHandler(createBudget));
+router.put('/budgets/:id', requireAuth, asyncHandler(updateBudget));
+router.delete('/budgets/:id', requireAuth, asyncHandler(deleteBudget));
 
 module.exports = router;

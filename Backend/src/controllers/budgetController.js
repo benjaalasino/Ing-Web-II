@@ -1,17 +1,30 @@
-const { db, getNextId } = require('../data/db');
+const { pool } = require('../data/db');
 const { CATEGORIES } = require('../constants/categories');
 const { getMonthYear } = require('../utils/dateUtils');
 
-const getBudgets = (req, res) => {
+const mapBudget = (row) => ({
+    id: row.id,
+    userId: row.user_id,
+    category: row.category,
+    amount: Number(row.amount),
+    month: row.month,
+    year: row.year,
+    createdAt: row.created_at
+});
+
+const getBudgets = async (req, res) => {
     const fallback = getMonthYear();
     const month = Number(req.query.month || fallback.month);
     const year = Number(req.query.year || fallback.year);
 
-    const items = db.budgets.filter((item) => item.userId === req.auth.userId && item.month === month && item.year === year);
-    res.json(items);
+    const { rows } = await pool.query(
+        'SELECT * FROM budgets WHERE user_id = $1 AND month = $2 AND year = $3',
+        [req.auth.userId, month, year]
+    );
+    res.json(rows.map(mapBudget));
 };
 
-const createBudget = (req, res) => {
+const createBudget = async (req, res) => {
     const { category, amount, month, year } = req.body;
 
     if (!category || amount === undefined || !month || !year) {
@@ -30,91 +43,86 @@ const createBudget = (req, res) => {
         return;
     }
 
-    const duplicated = db.budgets.some((item) => (
-        item.userId === req.auth.userId
-        && item.category === category
-        && item.month === Number(month)
-        && item.year === Number(year)
-    ));
+    const { rows: dup } = await pool.query(
+        'SELECT id FROM budgets WHERE user_id = $1 AND category = $2 AND month = $3 AND year = $4',
+        [req.auth.userId, category, Number(month), Number(year)]
+    );
 
-    if (duplicated) {
+    if (dup.length > 0) {
         res.status(400).json({ statusCode: 400, message: 'Ya tenes un presupuesto para esa categoria en este mes.' });
         return;
     }
 
-    const newBudget = {
-        id: getNextId('budgets'),
-        userId: req.auth.userId,
-        category,
-        amount: parsedAmount,
-        month: Number(month),
-        year: Number(year),
-        createdAt: new Date().toISOString()
-    };
+    const { rows } = await pool.query(
+        `INSERT INTO budgets (user_id, category, amount, month, year) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [req.auth.userId, category, parsedAmount, Number(month), Number(year)]
+    );
 
-    db.budgets.push(newBudget);
-    res.status(201).json(newBudget);
+    res.status(201).json(mapBudget(rows[0]));
 };
 
-const updateBudget = (req, res) => {
+const updateBudget = async (req, res) => {
     const budgetId = Number(req.params.id);
-    const budget = db.budgets.find((item) => item.id === budgetId && item.userId === req.auth.userId);
-
-    if (!budget) {
-        res.status(404).json({ statusCode: 404, message: 'Presupuesto no encontrado.' });
-        return;
-    }
-
     const parsedAmount = Number(req.body.amount);
+
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
         res.status(400).json({ statusCode: 400, message: 'El monto debe ser mayor a cero.' });
         return;
     }
 
-    budget.amount = parsedAmount;
-    res.json(budget);
-};
+    const { rows } = await pool.query(
+        'UPDATE budgets SET amount = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+        [parsedAmount, budgetId, req.auth.userId]
+    );
 
-const deleteBudget = (req, res) => {
-    const budgetId = Number(req.params.id);
-    const index = db.budgets.findIndex((item) => item.id === budgetId && item.userId === req.auth.userId);
-
-    if (index < 0) {
+    if (rows.length === 0) {
         res.status(404).json({ statusCode: 404, message: 'Presupuesto no encontrado.' });
         return;
     }
 
-    db.budgets.splice(index, 1);
+    res.json(mapBudget(rows[0]));
+};
+
+const deleteBudget = async (req, res) => {
+    const budgetId = Number(req.params.id);
+    const { rowCount } = await pool.query('DELETE FROM budgets WHERE id = $1 AND user_id = $2', [budgetId, req.auth.userId]);
+
+    if (rowCount === 0) {
+        res.status(404).json({ statusCode: 404, message: 'Presupuesto no encontrado.' });
+        return;
+    }
+
     res.json({ statusCode: 200, message: 'Presupuesto eliminado.' });
 };
 
-const getBudgetProgress = (req, res) => {
+const getBudgetProgress = async (req, res) => {
     const fallback = getMonthYear();
     const month = Number(req.query.month || fallback.month);
     const year = Number(req.query.year || fallback.year);
 
-    const userBudgets = db.budgets.filter((item) => item.userId === req.auth.userId && item.month === month && item.year === year);
+    const { rows: userBudgets } = await pool.query(
+        'SELECT * FROM budgets WHERE user_id = $1 AND month = $2 AND year = $3',
+        [req.auth.userId, month, year]
+    );
 
-    const result = userBudgets.map((budget) => {
-        const spent = db.expenses
-            .filter((expense) => (
-                expense.userId === req.auth.userId
-                && expense.category === budget.category
-                && new Date(expense.date).getMonth() + 1 === month
-                && new Date(expense.date).getFullYear() === year
-            ))
-            .reduce((sum, expense) => sum + Number(expense.amount), 0);
+    const result = [];
+    for (const budget of userBudgets) {
+        const { rows: spentRows } = await pool.query(
+            `SELECT COALESCE(SUM(amount), 0) AS spent FROM expenses
+             WHERE user_id = $1 AND category = $2 AND EXTRACT(MONTH FROM date) = $3 AND EXTRACT(YEAR FROM date) = $4`,
+            [req.auth.userId, budget.category, month, year]
+        );
+        const spent = Number(spentRows[0].spent);
+        const percentage = Number(budget.amount) > 0 ? (spent / Number(budget.amount)) * 100 : 0;
 
-        const percentage = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-
-        return {
+        result.push({
             budgetId: budget.id,
             category: budget.category,
-            budgetAmount: budget.amount,
+            budgetAmount: Number(budget.amount),
             spent,
             percentage
-        };
-    });
+        });
+    }
 
     res.json(result);
 };
