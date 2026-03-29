@@ -1,207 +1,517 @@
 <!DOCTYPE html>
-<html lang="es">
+<html class="light" lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cuentas Claras | Tu billetera de gastos</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <link rel="stylesheet" href="../css/styles.css">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Cuentas Claras | Finanzas Transparentes</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300..800&family=Manrope:wght@300..800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#f8faf8",
+                        surface: "#ffffff",
+                        surfaceSoft: "#eef7f0",
+                        ink: "#142315",
+                        muted: "#4a5f4d",
+                        line: "#d7e6da",
+                        primary: "#166534",
+                        primaryStrong: "#14532d",
+                        accent: "#059669",
+                        accentSoft: "#d9fbe8"
+                    },
+                    fontFamily: {
+                        headline: ["Sora", "sans-serif"],
+                        body: ["Manrope", "sans-serif"]
+                    },
+                    boxShadow: {
+                        soft: "0 10px 30px rgba(20, 35, 21, 0.08)",
+                        hard: "0 24px 60px rgba(20, 35, 21, 0.15)"
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        html,
+        body {
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .grid-bg {
+            background-image:
+                linear-gradient(to right, rgba(22, 101, 52, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(22, 101, 52, 0.08) 1px, transparent 1px);
+            background-size: 42px 42px;
+        }
+
+        .app-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid transparent;
+            padding: 0.72rem 1.25rem;
+            font-family: "Sora", sans-serif;
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            transition: all 180ms ease;
+            text-align: center;
+            line-height: 1;
+        }
+
+        .app-btn-solid {
+            background: #166534;
+            color: #ffffff;
+        }
+
+        .app-btn-solid:hover {
+            background: #14532d;
+        }
+
+        .app-btn-outline {
+            background: transparent;
+            color: #166534;
+            border-color: rgba(22, 101, 52, 0.38);
+        }
+
+        .app-btn-outline:hover {
+            background: #d9fbe8;
+            border-color: #166534;
+        }
+
+        .app-btn-light {
+            background: #ffffff;
+            color: #166534;
+        }
+
+        .app-btn-light:hover {
+            background: #d9fbe8;
+        }
+
+        .app-btn-outline-light {
+            background: transparent;
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .app-btn-outline-light:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .hero-entry {
+            animation: rise .7s ease forwards;
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
+        .hero-entry:nth-child(2) { animation-delay: .12s; }
+        .hero-entry:nth-child(3) { animation-delay: .2s; }
+        .hero-entry:nth-child(4) { animation-delay: .28s; }
+
+        .hero-phone-wrap {
+            max-height: calc(100svh - 7.5rem);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-phone {
+            width: clamp(210px, 19vw, 300px);
+        }
+
+        .hero-phone-screen {
+            aspect-ratio: 9 / 18.8;
+        }
+
+        .phone-ui {
+            font-size: clamp(10px, 1.55vw, 13px);
+            padding: 2.45em 1.15em 0.8em;
+            gap: 0.8em;
+        }
+
+        .phone-status {
+            font-size: 0.62em;
+            padding-inline: 0.3em;
+        }
+
+        .phone-status .material-symbols-outlined {
+            font-size: 1.15em !important;
+        }
+
+        .phone-title-row {
+            font-size: 0.84em;
+        }
+
+        .phone-card {
+            padding: 0.8em;
+            border-radius: 1em;
+        }
+
+        .phone-kicker {
+            font-size: 0.72em;
+        }
+
+        .phone-amount {
+            font-size: 1.9em;
+            line-height: 1.05;
+        }
+
+        .phone-progress {
+            margin-top: 0.7em;
+        }
+
+        .phone-list {
+            gap: 0.55em;
+            font-size: 0.8em;
+        }
+
+        .phone-item {
+            padding: 0.7em;
+            border-radius: 0.85em;
+        }
+
+        .phone-home-indicator {
+            margin-top: 0.35em;
+        }
+
+        .iphone-notch {
+            position: absolute;
+            top: 0.55rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 44%;
+            height: 1.35rem;
+            background: #0f1910;
+            border-radius: 0 0 1rem 1rem;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+        }
+
+        .notch-camera {
+            width: 0.38rem;
+            height: 0.38rem;
+            border-radius: 999px;
+            background: #1f3422;
+            box-shadow: inset 0 0 0 1px rgba(144, 238, 164, 0.25);
+        }
+
+        .notch-speaker {
+            width: 1.45rem;
+            height: 0.22rem;
+            border-radius: 999px;
+            background: #2f4933;
+        }
+
+        .iphone-home-indicator {
+            width: 34%;
+            height: 0.18rem;
+            border-radius: 999px;
+            background: #ccdacc;
+            opacity: 0.9;
+            margin: 0.3rem auto 0;
+        }
+
+        .iphone-battery {
+            position: relative;
+            width: 1.5rem;
+            height: 0.72rem;
+            border: 1.4px solid #718874;
+            border-radius: 0.22rem;
+        }
+
+        .iphone-battery::after {
+            content: "";
+            position: absolute;
+            right: -0.2rem;
+            top: 0.18rem;
+            width: 0.12rem;
+            height: 0.3rem;
+            background: #718874;
+            border-radius: 0 0.1rem 0.1rem 0;
+        }
+
+        .iphone-battery-level {
+            position: absolute;
+            left: 0.1rem;
+            top: 0.1rem;
+            width: 68%;
+            height: 0.4rem;
+            border-radius: 0.12rem;
+            background: #16a34a;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-phone-wrap {
+                max-height: calc(100svh - 6rem);
+            }
+
+            .hero-phone {
+                width: clamp(165px, 52vw, 255px);
+            }
+
+            .iphone-notch {
+                height: 1.2rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .hero-phone-wrap {
+                max-height: calc(100svh - 5.4rem);
+            }
+
+            .hero-phone {
+                width: clamp(132px, 38vw, 165px);
+            }
+
+            .iphone-notch {
+                top: 0.45rem;
+                height: 1.05rem;
+            }
+
+            .app-btn {
+                padding: 0.64rem 0.9rem;
+                font-size: 0.58rem;
+                letter-spacing: 0.13em;
+            }
+
+            .phone-ui {
+                font-size: clamp(8.3px, 2.6vw, 10.5px);
+                padding: 2.3em 1em 0.7em;
+                gap: 0.7em;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .nav-logo {
+                height: 2rem;
+            }
+
+            .nav-actions {
+                gap: 0.35rem;
+            }
+
+            .nav-actions .app-btn {
+                padding: 0.56rem 0.62rem;
+                font-size: 0.53rem;
+                letter-spacing: 0.09em;
+            }
+        }
+
+        @keyframes rise {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
-<body>
-    <header class="navbar navbar-expand-lg sticky-top app-navbar py-3">
-        <div class="container">
-            <a class="navbar-brand fw-bold d-flex align-items-center gap-0" href="#"><img src="../img/logo.svg" alt="Logo" style="height:5rem;width:auto"><span style="margin-left:-0.25rem">Cuentas Claras</span></a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal" aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir navegación">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="menuPrincipal">
-                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
-                    <li class="nav-item"><a class="nav-link" href="#beneficios">Beneficios</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#beneficios-detalle">Como funciona</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#demo">Demo</a></li>
-                    <li class="nav-item ms-lg-2"><a class="btn btn-light rounded-pill px-4" href="login.html">Ingresar</a></li>
-                    <li class="nav-item"><a class="btn btn-outline-light rounded-pill px-4" href="register.html">Registrarse</a></li>
-                </ul>
+<body class="bg-background text-ink font-body selection:bg-primary selection:text-white">
+    <nav class="fixed top-0 w-full z-50 border-b border-line/70 bg-background/95 backdrop-blur">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
+            <a class="flex items-center gap-2 min-w-0" href="#inicio">
+                <img alt="Logo de Cuentas Claras" class="nav-logo h-10 sm:h-14 w-auto" src="../img/logo.svg"/>
+                <span class="hidden sm:block font-headline font-extrabold tracking-tight text-lg text-primary">Cuentas Claras</span>
+            </a>
+
+            <div class="hidden md:flex items-center gap-8">
+                <a class="text-xs uppercase tracking-[0.22em] font-bold text-ink border-b-2 border-primary pb-1" href="#funciones">Funciones</a>
+                <a class="text-xs uppercase tracking-[0.22em] font-bold text-muted hover:text-ink transition-colors" href="#seguridad">Seguridad</a>
+                <a class="text-xs uppercase tracking-[0.22em] font-bold text-muted hover:text-ink transition-colors" href="#precio">Acceso</a>
+            </div>
+
+            <div class="nav-actions flex items-center gap-2 sm:gap-3 shrink-0">
+                <a class="app-btn app-btn-outline" href="login.html">Ingresar</a>
+                <a class="app-btn app-btn-solid" href="register.html">Empezar</a>
             </div>
         </div>
-    </header>
+    </nav>
 
-    <main>
-        <section class="hero py-5" id="ingreso">
-            <div class="container">
-                <div class="row g-4 g-lg-5 align-items-center">
-                    <div class="col-lg-7">
-                        <span class="hero-chip">Gestión de gastos simple y clara</span>
-                        <h1 class="display-5 fw-bold mt-3 mb-3">Tu plata ordenada en una sola app, sin vueltas.</h1>
-                        <p class="hero-lead mb-4">
-                            Guarda tickets, clasifica tus consumos y recibe recomendaciones prácticas de tu asesor financiero.
-                            Todo en una experiencia cotidiana y fácil de usar.
-                        </p>
-                        <div class="d-flex flex-wrap gap-2">
-                            <a class="btn btn-primary app-btn px-4 py-2 rounded-pill" href="register.html">Comenzar ahora</a>
-                            <a class="btn btn-outline-light px-4 py-2 rounded-pill" href="#beneficios">Ver beneficios</a>
+    <main class="pt-20 sm:pt-24 min-h-screen grid-bg" id="inicio">
+        <section class="px-4 sm:px-6 pt-4 sm:pt-6 md:pt-8 pb-8 overflow-hidden">
+            <div class="max-w-7xl mx-auto grid grid-cols-[minmax(108px,34vw)_minmax(0,1fr)] sm:grid-cols-[minmax(165px,34vw)_1fr] lg:grid-cols-2 gap-2 sm:gap-8 lg:gap-12 items-center">
+                <div class="space-y-4 sm:space-y-6 order-2 lg:order-1 min-w-0">
+                    <span class="hero-entry inline-flex max-w-full items-center gap-1.5 sm:gap-2 text-[0.58rem] sm:text-[0.7rem] font-black uppercase tracking-[0.12em] sm:tracking-[0.24em] bg-accentSoft text-primary px-2.5 sm:px-4 py-1.5 sm:py-2">
+                        <span class="material-symbols-outlined text-sm">task_alt</span>
+                        Gestion de gastos sin friccion
+                    </span>
+
+                    <h1 class="hero-entry font-headline font-black text-2xl sm:text-4xl md:text-6xl leading-tight tracking-tight text-ink">
+                        Tu plata clara, tus decisiones seguras.
+                    </h1>
+
+                    <p class="hero-entry text-sm sm:text-lg text-muted max-w-2xl leading-relaxed">
+                        Registra tickets, organiza categorias, controla presupuestos y recibe recomendaciones de tu asesor financiero en un solo panel.
+                    </p>
+
+                    <div class="hero-entry flex flex-col sm:flex-row gap-2 sm:gap-3 max-w-full">
+                        <a class="w-full sm:w-auto app-btn app-btn-solid" href="register.html">Crear cuenta</a>
+                        <a class="w-full sm:w-auto app-btn app-btn-outline" href="#funciones">Ver funciones</a>
+                    </div>
+                </div>
+
+                <div class="relative w-full min-w-0 mx-auto order-1 lg:order-2 hero-phone-wrap">
+                    <div class="absolute -top-10 -left-10 h-28 w-28 bg-accentSoft rounded-full blur-md"></div>
+                    <div class="absolute -bottom-10 -right-8 h-36 w-36 bg-primary/15 rounded-full blur-lg"></div>
+
+                    <div class="relative z-10 bg-ink rounded-[2.8rem] p-2.5 shadow-hard border-[6px] border-[#213225] hero-phone">
+                        <div class="iphone-notch" aria-hidden="true">
+                            <span class="notch-speaker"></span>
+                            <span class="notch-camera"></span>
+                        </div>
+
+                        <div class="phone-ui bg-surface rounded-[2.25rem] overflow-hidden hero-phone-screen flex flex-col">
+                            <div class="phone-status flex items-center justify-between font-bold text-[#304533]">
+                                <span>9:41</span>
+                                <div class="flex items-center gap-1">
+                                    <span>5G</span>
+                                    <span class="material-symbols-outlined !text-[0.82rem] !leading-none">wifi</span>
+                                    <span class="iphone-battery" aria-label="Bateria 68 por ciento">
+                                        <span class="iphone-battery-level"></span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="phone-title-row flex items-center justify-between">
+                                <span class="phone-kicker font-extrabold uppercase tracking-[0.16em] text-primary">Resumen marzo</span>
+                                <span class="text-muted">Actualizado hoy</span>
+                            </div>
+
+                            <div class="phone-card bg-surfaceSoft border border-line">
+                                <p class="phone-kicker uppercase tracking-[0.14em] text-muted mb-1">Gasto total</p>
+                                <p class="phone-amount font-headline font-black text-ink">$ 241.300</p>
+                                <div class="phone-progress h-2 bg-line rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary w-3/4"></div>
+                                </div>
+                            </div>
+
+                            <div class="phone-list space-y-2">
+                                <div class="phone-item flex justify-between items-center border border-line">
+                                    <span class="text-muted">Tickets</span>
+                                    <span class="font-extrabold text-ink">126</span>
+                                </div>
+                                <div class="phone-item flex justify-between items-center border border-line">
+                                    <span class="text-muted">Presupuestos</span>
+                                    <span class="font-extrabold text-ink">5</span>
+                                </div>
+                                <div class="phone-item flex justify-between items-center border border-line">
+                                    <span class="text-muted">Alertas</span>
+                                    <span class="font-extrabold text-ink">3</span>
+                                </div>
+                            </div>
+
+                            <div class="iphone-home-indicator phone-home-indicator" aria-hidden="true"></div>
                         </div>
                     </div>
-                    <div class="col-lg-5">
-                        <aside class="wallet-card">
-                            <p class="mb-2 text-light-emphasis small">Resumen rápido</p>
-                            <h2 class="h4 fw-bold mb-3">Tu mes en un vistazo</h2>
-                            <div class="stat-row"><span>Gastos registrados</span><strong>126</strong></div>
-                            <div class="stat-row"><span>Presupuesto disponible</span><strong>$ 241.300</strong></div>
-                            <div class="stat-row"><span>Alertas activas</span><strong>3</strong></div>
-                        </aside>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-14 md:py-24 px-4 sm:px-6 border-t border-line/80" id="funciones">
+            <div class="max-w-7xl mx-auto">
+                <div class="mb-10">
+                    <p class="text-xs uppercase tracking-[0.24em] font-black text-primary mb-3">Lo que hace la plataforma</p>
+                    <h2 class="font-headline text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-ink max-w-2xl">Funciones pensadas para tu flujo financiero real</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <article class="bg-surface border border-line p-6 sm:p-8 shadow-soft hover:-translate-y-1 transition-transform">
+                        <span class="material-symbols-outlined text-4xl text-primary">receipt_long</span>
+                        <h3 class="font-headline font-extrabold text-xl mt-5 mb-3">Carga de tickets</h3>
+                        <p class="text-muted text-sm leading-relaxed">Sube comprobantes en imagen o PDF y centraliza todos tus gastos sin perder tiempo.</p>
+                    </article>
+
+                    <article class="bg-surface border border-line p-6 sm:p-8 shadow-soft hover:-translate-y-1 transition-transform">
+                        <span class="material-symbols-outlined text-4xl text-primary">account_balance_wallet</span>
+                        <h3 class="font-headline font-extrabold text-xl mt-5 mb-3">Presupuestos inteligentes</h3>
+                        <p class="text-muted text-sm leading-relaxed">Define limites por categoria, visualiza tu avance y evita desviaciones antes de fin de mes.</p>
+                    </article>
+
+                    <article class="bg-surface border border-line p-6 sm:p-8 shadow-soft hover:-translate-y-1 transition-transform">
+                        <span class="material-symbols-outlined text-4xl text-primary">support_agent</span>
+                        <h3 class="font-headline font-extrabold text-xl mt-5 mb-3">Asesor financiero</h3>
+                        <p class="text-muted text-sm leading-relaxed">Recibe recomendaciones concretas en base a tus patrones de consumo y objetivos reales.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-14 md:py-24 px-4 sm:px-6 bg-surfaceSoft border-y border-line/80" id="seguridad">
+            <div class="max-w-7xl mx-auto">
+                <div class="text-center max-w-3xl mx-auto">
+                    <p class="text-xs uppercase tracking-[0.24em] font-black text-primary mb-3">Seguridad</p>
+                    <h2 class="font-headline font-black text-2xl sm:text-3xl md:text-4xl text-ink mb-4">Tus datos financieros protegidos de punta a punta</h2>
+                    <p class="text-muted">Autenticacion segura, control de acceso por roles y arquitectura backend preparada para escalar con confianza.</p>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-10">
+                    <div class="bg-surface border border-line p-4 sm:p-6 text-center">
+                        <p class="font-headline text-2xl font-black text-primary">JWT</p>
+                        <p class="text-xs uppercase tracking-[0.14em] text-muted mt-2">Sesiones seguras</p>
+                    </div>
+                    <div class="bg-surface border border-line p-4 sm:p-6 text-center">
+                        <p class="font-headline text-2xl font-black text-primary">RBAC</p>
+                        <p class="text-xs uppercase tracking-[0.14em] text-muted mt-2">Roles y permisos</p>
+                    </div>
+                    <div class="bg-surface border border-line p-4 sm:p-6 text-center">
+                        <p class="font-headline text-2xl font-black text-primary">API REST</p>
+                        <p class="text-xs uppercase tracking-[0.14em] text-muted mt-2">Integracion estable</p>
+                    </div>
+                    <div class="bg-surface border border-line p-4 sm:p-6 text-center">
+                        <p class="font-headline text-2xl font-black text-primary">MERCADO PAGO</p>
+                        <p class="text-xs uppercase tracking-[0.14em] text-muted mt-2">Cobros conectados</p>
                     </div>
                 </div>
             </div>
         </section>
 
-        <section class="py-5" id="beneficios">
-            <div class="container">
-                <div class="row g-3 g-lg-4">
-                    <div class="col-md-6 col-lg-4">
-                        <article class="feature-card h-100">
-                            <h3 class="h5 fw-bold mb-2">Registro rápido</h3>
-                            <p class="mb-0">Subí comprobantes desde tu celu en segundos.</p>
-                        </article>
+        <section class="px-4 sm:px-6 py-14 md:py-20" id="precio">
+            <div class="max-w-7xl mx-auto bg-primary text-white p-6 sm:p-10 md:p-16 relative overflow-hidden shadow-hard">
+                <div class="absolute inset-0 opacity-15 grid-bg pointer-events-none"></div>
+                <div class="relative z-10 grid md:grid-cols-2 gap-10 items-center">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.24em] font-bold text-white/80 mb-4">Empieza hoy</p>
+                        <h2 class="font-headline text-2xl sm:text-3xl md:text-5xl font-black leading-tight">Tu panel de gastos listo en menos de 2 minutos.</h2>
                     </div>
-                    <div class="col-md-6 col-lg-4">
-                        <article class="feature-card h-100">
-                            <h3 class="h5 fw-bold mb-2">Categorías automáticas</h3>
-                            <p class="mb-0">Ordena tus gastos para entender mejor tus hábitos.</p>
-                        </article>
+                    <div class="md:justify-self-end w-full md:w-auto">
+                        <div class="flex flex-col gap-3 w-full md:min-w-72">
+                            <a class="app-btn app-btn-light" href="register.html">Comenzar ahora</a>
+                            <a class="app-btn app-btn-outline-light" href="login.html">Ya tengo cuenta</a>
+                            <p class="text-center text-[0.65rem] uppercase tracking-[0.18em] text-white/70">Acceso rapido a tu dashboard personal</p>
+                        </div>
                     </div>
-                    <div class="col-md-6 col-lg-4">
-                        <article class="feature-card h-100">
-                            <h3 class="h5 fw-bold mb-2">Acompañamiento real</h3>
-                            <p class="mb-0">Tu asesor te propone mejoras concretas y alcanzables.</p>
-                        </article>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="py-5" id="beneficios-detalle">
-            <div class="container">
-                <div class="section-heading mb-4">
-                    <p class="kicker">Experiencia completa</p>
-                    <h2 class="h2 fw-bold mb-2">Una entrada completa a tu app de gastos</h2>
-                    <p class="text-muted mb-0">Cuadros informativos, visualizaciones y flujo de uso real.</p>
-                </div>
-
-                <div class="row g-3 g-lg-4">
-                    <div class="col-md-6">
-                        <article class="info-card h-100">
-                            <h3 class="h5 fw-bold">Panel de movimientos</h3>
-                            <p>Filtra por fecha, categoria o medio de pago en tiempo real.</p>
-                            <ul class="mb-0">
-                                <li>Búsqueda por texto y monto.</li>
-                                <li>Vista mensual y semanal.</li>
-                                <li>Etiquetas personalizadas.</li>
-                            </ul>
-                        </article>
-                    </div>
-                    <div class="col-md-6">
-                        <article class="info-card h-100">
-                            <h3 class="h5 fw-bold">Control de presupuesto</h3>
-                            <p>Configura limites por rubro y activa alertas preventivas.</p>
-                            <ul class="mb-0">
-                                <li>Reglas por categoria.</li>
-                                <li>Semaforo de avance.</li>
-                                <li>Recordatorios automáticos.</li>
-                            </ul>
-                        </article>
-                    </div>
-                    <div class="col-md-6">
-                        <article class="info-card h-100">
-                            <h3 class="h5 fw-bold">Asesor financiero</h3>
-                            <p>Análisis de patrones de consumo y plan de mejora mensual.</p>
-                            <ul class="mb-0">
-                                <li>Resumen de hábitos.</li>
-                                <li>Recomendaciones priorizadas.</li>
-                                <li>Seguimiento mensual.</li>
-                            </ul>
-                        </article>
-                    </div>
-                    <div class="col-md-6">
-                        <article class="info-card h-100">
-                            <h3 class="h5 fw-bold">Carga de comprobantes</h3>
-                            <ul class="mb-0">
-                                <li>Imagen o PDF.</li>
-                                <li>Lectura asistida de texto.</li>
-                                <li>Categorización sugerida.</li>
-                            </ul>
-                        </article>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="py-5" id="demo">
-            <div class="container">
-                <div class="section-heading mb-4">
-                    <p class="kicker">Demostración</p>
-                    <h2 class="h2 fw-bold mb-2">Visualiza el valor de la plataforma</h2>
-                </div>
-
-                <div class="row g-3 g-lg-4">
-                    <div class="col-lg-4">
-                        <article class="demo-card h-100">
-                            <h3 class="h5 fw-bold">Indicadores</h3>
-                            <div class="stat-list mt-3">
-                                <div><span class="stat-number" data-target="126">0</span><small>tickets cargados</small></div>
-                                <div><span class="stat-number" data-target="18">0</span><small>categorías analizadas</small></div>
-                                <div><span class="stat-number" data-target="92">0</span><small>recomendaciones aplicadas</small></div>
-                            </div>
-                        </article>
-                    </div>
-                    <div class="col-lg-8">
-                        <article class="demo-card h-100">
-                            <h3 class="h5 fw-bold">Flujo reciente de gastos</h3>
-                            <div class="table-responsive mt-3">
-                                <table class="table align-middle mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Fecha</th>
-                                            <th>Concepto</th>
-                                            <th>Categoria</th>
-                                            <th>Monto</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td>10/03</td><td>Supermercado</td><td>Alimentación</td><td>$43.200</td></tr>
-                                        <tr><td>11/03</td><td>Combustible</td><td>Transporte</td><td>$28.500</td></tr>
-                                        <tr><td>12/03</td><td>Streaming</td><td>Suscripciones</td><td>$8.700</td></tr>
-                                        <tr><td>12/03</td><td>Farmacia</td><td>Salud</td><td>$12.900</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </article>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="py-5">
-            <div class="container">
-                <div class="cta-final text-center">
-                    <h2 class="h3 fw-bold mb-2">Empieza ahora y convierte tus gastos en decisiones inteligentes</h2>
-                    <p class="text-muted mb-3">Accede a tu cuenta y continua con tu panel personal.</p>
-                    <a class="btn btn-primary app-btn px-4 py-2 rounded-pill" href="login.html">Ir a inicio de sesión</a>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="py-4">
-        <div class="container text-center text-muted">
-            <p class="mb-0">Cuentas Claras | Tu entrada a una administración financiera más clara.</p>
+    <footer class="bg-[#edf6ef] border-t border-line">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-12 flex flex-col md:flex-row gap-5 md:items-center md:justify-between">
+            <div>
+                <p class="font-headline font-extrabold text-primary text-lg">Cuentas Claras</p>
+                <p class="text-sm text-muted">Copyright 2026 | Finanzas claras para decisiones inteligentes.</p>
+            </div>
+
+            <div class="flex flex-wrap gap-6 text-sm">
+                <a class="text-muted hover:text-primary transition-colors" href="#">Terminos</a>
+                <a class="text-muted hover:text-primary transition-colors" href="#">Privacidad</a>
+                <a class="text-muted hover:text-primary transition-colors" href="#">Cookies</a>
+            </div>
         </div>
     </footer>
-
-    <script src="../js/main.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>

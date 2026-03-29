@@ -1,0 +1,555 @@
+================================================================================
+         CUENTAS CLARAS - DOCUMENTACION TECNICA DEL BACKEND
+================================================================================
+
+Fecha: 28 de marzo de 2026
+Proyecto: Cuentas Claras (ex WisePocket)
+Stack: Node.js + Express + PostgreSQL
+Deploy: Railway
+
+Este documento explica como esta construido todo el backend de la aplicacion,
+pensado para alguien que sabe programar pero no tiene experiencia con backend.
+
+================================================================================
+1. QUE ES UN BACKEND Y COMO FUNCIONA ESTE
+================================================================================
+
+Un backend es un servidor que:
+- Escucha peticiones HTTP (GET, POST, PUT, DELETE) en una URL
+- Procesa la logica (validaciones, calculos, consultas a la base de datos)
+- Devuelve una respuesta en formato JSON
+
+En nuestro caso, el frontend (HTML/CSS/JS puro) hace peticiones a URLs como:
+
+    POST /api/auth/login          → para loguearse
+    GET  /api/expenses            → para traer los gastos
+    POST /api/expenses            → para crear un gasto
+    DELETE /api/expenses/5        → para borrar el gasto con id=5
+
+El backend recibe esas peticiones, interactua con la base de datos PostgreSQL,
+y devuelve la respuesta.
+
+================================================================================
+2. ESTRUCTURA DE CARPETAS
+================================================================================
+
+Backend/
+├── server.js                  ← Archivo que ejecuta Railway (entry point)
+├── package.json               ← Dependencias del proyecto
+└── src/
+    ├── server.js              ← Inicializa la BD y arranca Express
+    ├── app.js                 ← Configura Express, rutas y middlewares
+    ├── config/
+    │   └── env.js             ← Variables de entorno (PORT, JWT_SECRET, DATABASE_URL)
+    ├── constants/
+    │   └── categories.js      ← Lista de categorias validas
+    ├── data/
+    │   ├── db.js              ← Conexion a PostgreSQL (pool de conexiones)
+    │   ├── schema.sql         ← Estructura de las tablas (se ejecuta al iniciar)
+    │   └── seed.js            ← Datos demo (se insertan si la BD esta vacia)
+    ├── controllers/           ← Logica de cada endpoint (recibe req, devuelve res)
+    │   ├── authController.js
+    │   ├── expenseController.js
+    │   ├── budgetController.js
+    │   ├── profileController.js
+    │   ├── userController.js
+    │   ├── recommendationController.js
+    │   ├── ticketController.js
+    │   ├── mercadoPagoController.js
+    │   └── healthController.js
+    ├── routes/                ← Define QUE URL apunta a QUE controller
+    │   ├── authRoutes.js
+    │   ├── expenseRoutes.js
+    │   ├── budgetRoutes.js
+    │   ├── profileRoutes.js
+    │   ├── userRoutes.js
+    │   ├── recommendationRoutes.js
+    │   ├── ticketRoutes.js
+    │   ├── mercadoPagoRoutes.js
+    │   └── healthRoutes.js
+    ├── middlewares/            ← Funciones que se ejecutan ANTES del controller
+    │   ├── authMiddleware.js  ← Verifica el token JWT (autenticacion)
+    │   ├── asyncHandler.js    ← Atrapa errores de funciones async
+    │   ├── errorHandler.js    ← Manejo global de errores
+    │   └── uploadMiddleware.js← Manejo de subida de imagenes (multer)
+    ├── services/              ← Logica de negocio compleja
+    │   ├── mercadoPagoService.js
+    │   ├── azureDocumentService.js
+    │   └── receiptMapperService.js
+    └── utils/                 ← Funciones auxiliares reutilizables
+        ├── authUtils.js       ← Hash de passwords, firma/verificacion JWT
+        ├── dateUtils.js       ← Helpers de fechas
+        └── expenseStats.js    ← Calculo de estadisticas de gastos
+
+================================================================================
+3. FLUJO DE UNA PETICION (PASO A PASO)
+================================================================================
+
+Ejemplo: el usuario quiere ver sus gastos.
+
+1) El frontend hace:        GET /api/expenses
+   Con header:              Authorization: Bearer eyJhbGciOi...
+
+2) Express recibe la peticion y busca la ruta en expenseRoutes.js:
+   router.get('/expenses', requireAuth, asyncHandler(getExpenses));
+
+3) Primero se ejecuta requireAuth (middleware de autenticacion):
+   - Extrae el token del header "Authorization: Bearer ..."
+   - Lo verifica con jwt.verify() usando el JWT_SECRET
+   - Busca al usuario en la BD: SELECT id, role, name FROM users WHERE id = $1
+   - Si es valido, pone los datos en req.auth = { userId, role, name }
+   - Llama a next() para pasar al siguiente paso
+
+4) asyncHandler envuelve la funcion para atrapar errores async
+
+5) Se ejecuta getExpenses (controller):
+   - Lee req.auth.userId para saber QUIEN pide
+   - Lee req.query para filtros (category, month, year, commerce)
+   - Construye un SQL dinamico: SELECT * FROM expenses WHERE user_id = $1 ...
+   - Ejecuta la query con pool.query(sql, params)
+   - Mapea los resultados de snake_case (BD) a camelCase (frontend)
+   - Responde con res.json(items)
+
+6) El frontend recibe el JSON y lo muestra en pantalla.
+
+================================================================================
+4. BASE DE DATOS POSTGRESQL
+================================================================================
+
+Antes usabamos arrays en memoria (se perdia todo al reiniciar el servidor).
+Ahora usamos PostgreSQL, una base de datos relacional real.
+
+--- CONEXION ---
+
+En db.js se crea un "pool" de conexiones:
+
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+Un pool es un grupo de conexiones reutilizables. En vez de abrir y cerrar una
+conexion por cada query, el pool mantiene varias abiertas y las recicla.
+Es mucho mas eficiente.
+
+--- INICIALIZACION ---
+
+Al arrancar el servidor (server.js), se ejecuta initDb():
+1. Lee schema.sql y ejecuta los CREATE TABLE IF NOT EXISTS
+2. Ejecuta seed.js que inserta datos demo SI la tabla users esta vacia
+
+Esto significa que:
+- La primera vez que arranca, crea las tablas y los datos de prueba
+- Las siguientes veces, no hace nada (las tablas ya existen, los datos tambien)
+
+--- TABLAS ---
+
+La base tiene 6 tablas:
+
+┌─────────────────────────────────────────────────────────────┐
+│ users                                                       │
+├──────────────┬──────────────┬───────────────────────────────┤
+│ id (PK)      │ SERIAL       │ Auto-incrementa               │
+│ name         │ VARCHAR(100) │ Nombre del usuario             │
+│ email        │ VARCHAR(255) │ Unico, no nulo                 │
+│ password     │ VARCHAR(255) │ Hash bcrypt (NUNCA texto plano)│
+│ role         │ VARCHAR(20)  │ 'user' o 'advisor'             │
+│ created_at   │ TIMESTAMPTZ  │ Fecha de registro              │
+└──────────────┴──────────────┴───────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ expenses                                                    │
+├──────────────┬──────────────┬───────────────────────────────┤
+│ id (PK)      │ SERIAL       │                                │
+│ user_id (FK) │ INTEGER      │ → users(id) ON DELETE CASCADE  │
+│ commerce     │ VARCHAR(255) │ Nombre del comercio            │
+│ date         │ DATE         │ Fecha del gasto                │
+│ amount       │ NUMERIC(12,2)│ Monto con 2 decimales          │
+│ category     │ VARCHAR(50)  │ Comida, Transporte, etc.       │
+│ description  │ TEXT         │ Descripcion opcional            │
+│ image_url    │ TEXT         │ URL de imagen del ticket        │
+│ created_at   │ TIMESTAMPTZ  │                                │
+└──────────────┴──────────────┴───────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ budgets                                                     │
+├──────────────┬──────────────┬───────────────────────────────┤
+│ id (PK)      │ SERIAL       │                                │
+│ user_id (FK) │ INTEGER      │ → users(id)                    │
+│ category     │ VARCHAR(50)  │                                │
+│ amount       │ NUMERIC(12,2)│ Presupuesto maximo             │
+│ month        │ INTEGER      │ 1-12                           │
+│ year         │ INTEGER      │ Ej: 2026                       │
+│ created_at   │ TIMESTAMPTZ  │                                │
+│ UNIQUE(user_id, category, month, year)                      │
+└──────────────┴──────────────┴───────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ recommendations                                             │
+├──────────────┬──────────────┬───────────────────────────────┤
+│ id (PK)      │ SERIAL       │                                │
+│ user_id (FK) │ INTEGER      │ Usuario que recibe la recom.   │
+│ advisor_id   │ INTEGER      │ Asesor que la creo (nullable)  │
+│ text         │ TEXT         │ Contenido de la recomendacion   │
+│ created_at   │ TIMESTAMPTZ  │                                │
+└──────────────┴──────────────┴───────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ mp_tokens                                                   │
+├──────────────┬──────────────┬───────────────────────────────┤
+│ id (PK)      │ SERIAL       │                                │
+│ user_id (FK) │ INTEGER      │ UNIQUE → un token por usuario  │
+│ access_token │ TEXT         │ Token de MercadoPago            │
+│ mp_user_id   │ VARCHAR(100) │ ID del usuario en MP            │
+│ created_at   │ TIMESTAMPTZ  │                                │
+└──────────────┴──────────────┴───────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ mp_payments                                                 │
+├──────────────┬──────────────┬───────────────────────────────┤
+│ id (PK)      │ SERIAL       │                                │
+│ user_id (FK) │ INTEGER      │ → users(id)                    │
+│ mp_payment_id│ VARCHAR(100) │ ID del pago en MercadoPago     │
+│ description  │ TEXT         │ Descripcion del pago            │
+│ amount       │ NUMERIC(12,2)│                                │
+│ date         │ DATE         │                                │
+│ category     │ VARCHAR(50)  │ Auto-categorizado               │
+│ payment_method│VARCHAR(50)  │ credit_card, debit_card, etc.  │
+│ created_at   │ TIMESTAMPTZ  │                                │
+│ UNIQUE(user_id, mp_payment_id) ← evita duplicados           │
+└──────────────┴──────────────┴───────────────────────────────┘
+
+--- RELACIONES ---
+
+    users ──< expenses        (un usuario tiene muchos gastos)
+    users ──< budgets         (un usuario tiene muchos presupuestos)
+    users ──< recommendations (un usuario recibe muchas recomendaciones)
+    users ──< mp_tokens       (un usuario tiene UN token de MP)
+    users ──< mp_payments     (un usuario tiene muchos pagos de MP)
+
+ON DELETE CASCADE significa que si borras un usuario, se borran
+automaticamente todos sus gastos, presupuestos, etc.
+
+--- COMO SE HACEN LAS QUERIES ---
+
+En vez de manipular arrays como antes:
+    ANTES:  db.expenses.filter(e => e.userId === userId)
+    AHORA:  pool.query('SELECT * FROM expenses WHERE user_id = $1', [userId])
+
+Los $1, $2, etc. son parametros preparados (prepared statements).
+NUNCA se concatenan valores directo al SQL porque eso permite SQL injection.
+Ejemplo de lo que NUNCA hay que hacer:
+    pool.query("SELECT * FROM users WHERE email = '" + email + "'")  // PELIGROSO
+
+Lo correcto:
+    pool.query('SELECT * FROM users WHERE email = $1', [email])  // SEGURO
+
+PostgreSQL reemplaza $1 por el valor de forma segura.
+
+================================================================================
+5. AUTENTICACION (JWT)
+================================================================================
+
+--- QUE ES JWT ---
+
+JWT (JSON Web Token) es un string firmado que contiene datos del usuario.
+Cuando un usuario se loguea, el backend genera un token asi:
+
+    jwt.sign({ userId: 2, role: 'user', name: 'Juan' }, JWT_SECRET, { expiresIn: '12h' })
+
+Resultado: "eyJhbGciOi..."
+
+Este token se guarda en el navegador (localStorage). Cada vez que el frontend
+hace una peticion al backend, lo manda en el header:
+
+    Authorization: Bearer eyJhbGciOi...
+
+El backend lo verifica con jwt.verify(). Si es valido y no expiro, sabe
+quien es el usuario sin necesidad de buscar en la BD (el userId esta dentro
+del token). Pero igual verificamos que el usuario exista en la BD por seguridad.
+
+--- FLUJO DE REGISTRO ---
+
+1. POST /api/auth/register con { name, email, password }
+2. Se valida que no exista el email
+3. Se hashea la password con bcrypt:
+   bcrypt.hash('123456', 10) → "$2a$10$xKj..." (irreversible)
+4. Se inserta el usuario en la BD con la password hasheada
+5. Se responde con { message: 'Cuenta creada correctamente.' }
+
+--- FLUJO DE LOGIN ---
+
+1. POST /api/auth/login con { email, password }
+2. Se busca al usuario por email
+3. Se compara la password con bcrypt.compare(input, hash)
+4. Si coincide, se firma un JWT y se devuelve:
+   { access_token: "eyJ...", role: "user", userId: 2, name: "Juan" }
+
+--- PASSWORDS ---
+
+Las passwords NUNCA se guardan en texto plano. Se guardan como hash bcrypt.
+bcrypt es un algoritmo de hashing lento a proposito (para que sea dificil
+de romper por fuerza bruta). El "10" es el numero de rondas (salt rounds).
+
+================================================================================
+6. MIDDLEWARES
+================================================================================
+
+Un middleware es una funcion que se ejecuta ENTRE que llega la peticion
+y se ejecuta el controller. Es como un filtro o checkpoint.
+
+--- requireAuth ---
+Verifica que el usuario este logueado (tenga un JWT valido).
+Si no tiene token o es invalido, devuelve 401 y corta la cadena.
+Si es valido, pone req.auth = { userId, role, name } y sigue.
+
+--- requireRole('advisor') ---
+Se usa despues de requireAuth. Verifica que el usuario tenga el rol
+indicado. Si no, devuelve 403 (Forbidden).
+
+--- asyncHandler ---
+Express 4 no atrapa errores de funciones async automaticamente.
+Si una funcion async tira un error, Express no lo atrapa y el servidor
+se congela. asyncHandler envuelve la funcion en un try/catch automatico:
+
+    const asyncHandler = (fn) => (req, res, next) => {
+        Promise.resolve(fn(req, res, next)).catch(next);
+    };
+
+--- errorHandler ---
+Si algo falla y ningun controller lo manejo, este middleware atrapa el
+error y devuelve un JSON con el mensaje. Es el ultimo middleware.
+
+--- uploadMiddleware ---
+Usa multer para recibir imagenes de tickets. Solo acepta JPG, PNG, WEBP
+de hasta 5MB. Guarda la imagen en memoria (req.file.buffer).
+
+================================================================================
+7. RUTAS (ENDPOINTS DE LA API)
+================================================================================
+
+Cada archivo de rutas define QUE URL ejecuta QUE funcion:
+
+--- AUTH ---
+POST /api/auth/register          → Crear cuenta
+POST /api/auth/login             → Loguearse (devuelve JWT)
+
+--- PROFILE ---
+GET  /api/profile                → Ver mi perfil
+PUT  /api/profile                → Editar nombre/email/password
+
+--- EXPENSES ---
+GET  /api/expenses               → Listar gastos (con filtros opcionales)
+GET  /api/expenses/stats         → Estadisticas (totales por categoria, mes, etc.)
+POST /api/expenses               → Crear gasto
+PUT  /api/expenses/:id           → Editar gasto
+DELETE /api/expenses/:id         → Borrar gasto
+
+--- BUDGETS ---
+GET  /api/budgets                → Listar presupuestos del mes
+GET  /api/budgets/progress       → Progreso (cuanto gaste vs presupuesto)
+POST /api/budgets                → Crear presupuesto
+PUT  /api/budgets/:id            → Editar monto
+DELETE /api/budgets/:id          → Borrar presupuesto
+
+--- RECOMMENDATIONS ---
+GET  /api/recommendations        → Ver recomendaciones recibidas
+POST /api/recommendations        → Crear recomendacion (solo advisor)
+
+--- USERS (solo advisors) ---
+GET  /api/users                  → Listar usuarios
+GET  /api/users/:id              → Ver un usuario
+GET  /api/users/:id/stats        → Ver estadisticas de un usuario
+
+--- TICKETS ---
+POST /api/tickets/upload         → Subir imagen de ticket (OCR con Azure)
+
+--- MERCADOPAGO ---
+GET  /api/mercadopago/status     → ¿Tengo MP conectado?
+POST /api/mercadopago/connect    → Conectar con Access Token
+POST /api/mercadopago/disconnect → Desconectar
+GET  /api/mercadopago/payments   → Ver gastos capturados por MP
+POST /api/mercadopago/webhook    → Webhook que recibe notificaciones de MP
+
+--- HEALTH ---
+GET  /api/health                 → Devuelve { ok: true } (para monitoreo)
+
+================================================================================
+8. MERCADOPAGO - COMO FUNCIONA
+================================================================================
+
+La integracion con MercadoPago permite registrar gastos automaticamente
+cuando el usuario paga algo con transferencia o QR.
+
+--- CONCEPTO: WEBHOOK ---
+
+Un webhook es una URL que vos le das a un servicio externo (en este caso
+MercadoPago) para que te AVISE cuando pasa algo. En vez de preguntar todo
+el tiempo "¿hubo un pago?", MercadoPago te avisa mandando un POST a tu URL.
+
+Es como dejar tu numero de telefono en un negocio para que te avisen
+cuando llega un producto, en vez de ir a preguntar todos los dias.
+
+--- FLUJO COMPLETO ---
+
+PASO 1: CONECTAR LA CUENTA
+- El usuario va a Perfil en la app
+- Pega su Access Token de MercadoPago (se obtiene del panel de desarrollador de MP)
+- El backend hace POST a https://api.mercadopago.com/users/me con ese token
+  para verificar que sea valido y obtener el mp_user_id
+- Si es valido, guarda el token y el mp_user_id en tabla mp_tokens
+
+PASO 2: CONFIGURAR WEBHOOK EN MERCADOPAGO
+- En el panel de desarrollador de MercadoPago, el usuario configura:
+  URL: https://tu-dominio.railway.app/api/mercadopago/webhook
+  Evento: payment
+- Esto le dice a MP: "cada vez que haya un pago, mandame un POST a esa URL"
+
+PASO 3: EL USUARIO HACE UN PAGO (transferencia, QR, etc.)
+
+PASO 4: MP ENVIA EL WEBHOOK
+- MP manda un POST al backend con algo como:
+  { "type": "payment", "data": { "id": "12345678" } }
+- Es decir, solo te dice el ID del pago, no los detalles
+
+PASO 5: EL BACKEND PROCESA EL WEBHOOK
+- Recibe el POST, responde inmediatamente con 200 OK (MP necesita respuesta rapida)
+- Busca en mp_tokens TODOS los tokens guardados
+- Para cada token, consulta a la API de MP:
+  GET https://api.mercadopago.com/v1/payments/12345678
+  Authorization: Bearer <access_token>
+- Si la API responde con el pago, verifica:
+  a) ¿El pago esta approved? Si no, lo ignora
+  b) ¿El payer.id coincide con el mp_user_id? Esto es CLAVE:
+     - Si YO pague, payer.id === mi mp_user_id → es un GASTO mio ✓
+     - Si ME pagaron a mi, payer.id != mi mp_user_id → NO es un gasto ✗
+  c) ¿Ya esta registrado? (evita duplicados)
+- Si pasa todas las verificaciones, lo guarda en mp_payments con:
+  - Descripcion del pago
+  - Monto
+  - Fecha
+  - Categoria auto-detectada (por keywords en la descripcion)
+  - Metodo de pago (credit_card, debit_card, etc.)
+
+PASO 6: EL USUARIO VE EL GASTO
+- En la pagina de MercadoPago de la app, el frontend hace:
+  GET /api/mercadopago/payments
+- El backend busca en mp_payments los pagos de ese usuario
+- Se muestran en una tabla con filtros (categoria, mes, ano)
+
+--- CATEGORIZACION AUTOMATICA ---
+
+La funcion categorizeMpPayment analiza la descripcion del pago:
+- Si dice "supermercado", "coto", "dia", etc. → Supermercado
+- Si dice "farmacia", "farmacity", etc. → Salud
+- Si dice "uber", "sube", "nafta", etc. → Transporte
+- Si dice "netflix", "spotify", "cine", etc. → Entretenimiento
+- Si dice "udemy", "libro", etc. → Educacion
+- Si dice "restaurante", "pizza", "cafe", etc. → Comida
+- Si no coincide con nada → Otros
+
+--- FORMATOS DE WEBHOOK ---
+
+MercadoPago puede mandar webhooks en distintos formatos segun la config:
+- Formato Webhooks: { type: "payment", data: { id: "123" } }
+- Formato IPN: ?topic=payment&id=123
+- En el body: { topic: "payment", id: "123" }
+El backend maneja todos estos formatos para Mayor compatibilidad.
+
+================================================================================
+9. ROLES DE USUARIO
+================================================================================
+
+Hay 2 roles:
+
+USER (usuario comun):
+- Puede ver/crear/editar/borrar sus propios gastos
+- Puede ver/crear/editar/borrar sus presupuestos
+- Puede subir tickets
+- Puede conectar MercadoPago
+- Puede ver recomendaciones que le enviaron
+
+ADVISOR (asesor financiero):
+- Puede ver la lista de usuarios
+- Puede ver las estadisticas de cualquier usuario
+- Puede enviar recomendaciones a usuarios
+- NO puede crear gastos ni presupuestos (solo mira y recomienda)
+
+La distincion se hace con requireRole('advisor') en las rutas.
+
+================================================================================
+10. COMO SE SIRVE EL FRONTEND
+================================================================================
+
+El backend tambien sirve los archivos del frontend. En app.js:
+
+1. Se busca la carpeta Frontend/public/src (probando varias rutas posibles)
+2. Se sirven los archivos estaticos: CSS, JS, imagenes
+3. Se configura un router para que /login.html sirva pages/login.html
+4. La raiz / redirige a /pages/index.html
+
+Esto permite que el frontend y backend corran en el mismo servidor
+(un solo servicio en Railway en vez de dos).
+
+================================================================================
+11. VARIABLES DE ENTORNO
+================================================================================
+
+Las variables de entorno son valores de configuracion que NO van en el
+codigo (para no exponer contraseñas en GitHub). Se configuran en Railway.
+
+PORT                              → Puerto del servidor (Railway lo pone solo)
+JWT_SECRET                        → Clave secreta para firmar tokens JWT
+DATABASE_URL                      → URL de conexion a PostgreSQL
+AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT → Para OCR de tickets (opcional)
+AZURE_DOCUMENT_INTELLIGENCE_KEY   → Key de Azure (opcional)
+
+En desarrollo local, se pueden poner en un archivo .env en la carpeta Backend/
+
+================================================================================
+12. DEPENDENCIAS (package.json)
+================================================================================
+
+express       → Framework web (maneja rutas, peticiones HTTP)
+pg            → Cliente PostgreSQL para Node.js
+bcryptjs      → Hasheo de passwords (seguridad)
+jsonwebtoken  → Crear y verificar tokens JWT (autenticacion)
+cors          → Permitir peticiones desde otros dominios
+dotenv        → Leer variables de entorno desde archivo .env
+multer        → Subida de archivos (imagenes de tickets)
+
+================================================================================
+13. DEPLOY EN RAILWAY
+================================================================================
+
+Railway es una plataforma de hosting como Heroku.
+
+Configuracion:
+1. El repositorio de GitHub esta conectado a Railway
+2. Cada push a main dispara un deploy automatico
+3. Railway detecta que es Node.js, ejecuta npm install y luego npm start
+4. npm start ejecuta "node server.js"
+5. server.js → require('./src/server') → initDb() → app.listen()
+
+Servicios en Railway:
+- Backend (Node.js) → el servidor Express
+- PostgreSQL → la base de datos (Railway la provee como servicio)
+
+La DATABASE_URL del PostgreSQL se configura como variable de entorno
+en el servicio de Backend.
+
+================================================================================
+14. SEGURIDAD IMPLEMENTADA
+================================================================================
+
+- Passwords hasheadas con bcrypt (nunca texto plano)
+- JWT con expiracion de 12 horas
+- Prepared statements ($1, $2) en todas las queries SQL (previene SQL injection)
+- Validacion de inputs en todos los endpoints
+- Access Token de MP guardado en la BD (no expuesto al frontend)
+- Webhook verifica que el pago sea del usuario correcto (payer.id === mp_user_id)
+- CORS habilitado para controlar origenes de peticiones
+- Archivos subidos validados por tipo y tamaño (max 5MB, solo JPG/PNG/WEBP)
+- ON DELETE CASCADE en foreign keys (limpieza automatica de datos)
+- Constraint UNIQUE donde corresponde (email, budget por categoria/mes, mp_payment_id)
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
