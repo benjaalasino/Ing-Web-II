@@ -55,40 +55,65 @@
             background-size: 42px 42px;
         }
 
+        .brand-link {
+            gap: 0;
+            align-items: center;
+        }
+
+        .nav-logo {
+            display: block;
+        }
+
+        .brand-wordmark {
+            font-family: "Sora", sans-serif;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            font-size: clamp(0.78rem, 1.18vw, 1.06rem);
+            color: #166534;
+            margin-left: -0.46rem;
+            white-space: nowrap;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+        }
+
         .app-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             border: 1px solid transparent;
-            padding: 0.72rem 1.25rem;
-            font-family: "Sora", sans-serif;
-            font-size: 0.68rem;
-            font-weight: 800;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            transition: all 180ms ease;
+            border-radius: 0.75rem;
+            padding: 0.5rem 1rem;
+            font-family: "Manrope", sans-serif;
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: 0;
+            text-transform: none;
+            transition: all 300ms ease;
             text-align: center;
-            line-height: 1;
+            line-height: 1.35;
         }
 
         .app-btn-solid {
             background: #166534;
-            color: #ffffff;
+            color: #f0fdf4;
         }
 
         .app-btn-solid:hover {
             background: #14532d;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(22, 101, 52, 0.2);
         }
 
         .app-btn-outline {
             background: transparent;
-            color: #166534;
-            border-color: rgba(22, 101, 52, 0.38);
+            color: #374151;
+            border-color: #d7e6da;
         }
 
         .app-btn-outline:hover {
-            background: #d9fbe8;
-            border-color: #166534;
+            background: #eef7f0;
+            transform: scale(1.02);
         }
 
         .app-btn-light {
@@ -98,16 +123,19 @@
 
         .app-btn-light:hover {
             background: #d9fbe8;
+            transform: translateY(-1px);
+            box-shadow: 0 10px 18px rgba(22, 101, 52, 0.2);
         }
 
         .app-btn-outline-light {
             background: transparent;
             color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.6);
+            border-color: rgba(255, 255, 255, 0.55);
         }
 
         .app-btn-outline-light:hover {
             background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.02);
         }
 
         .hero-entry {
@@ -284,9 +312,8 @@
             }
 
             .app-btn {
-                padding: 0.64rem 0.9rem;
-                font-size: 0.58rem;
-                letter-spacing: 0.13em;
+                padding: 0.46rem 0.78rem;
+                font-size: 0.76rem;
             }
 
             .phone-ui {
@@ -301,14 +328,18 @@
                 height: 2rem;
             }
 
+            .brand-wordmark {
+                font-size: 0.66rem;
+                margin-left: -0.5rem;
+            }
+
             .nav-actions {
                 gap: 0.35rem;
             }
 
             .nav-actions .app-btn {
-                padding: 0.56rem 0.62rem;
-                font-size: 0.53rem;
-                letter-spacing: 0.09em;
+                padding: 0.42rem 0.62rem;
+                font-size: 0.71rem;
             }
         }
 
@@ -323,9 +354,9 @@
 <body class="bg-background text-ink font-body selection:bg-primary selection:text-white">
     <nav class="fixed top-0 w-full z-50 border-b border-line/70 bg-background/95 backdrop-blur">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-2 sm:gap-4">
-            <a class="flex items-center gap-2 min-w-0" href="#inicio">
+            <a class="brand-link flex items-center min-w-0" href="#inicio">
                 <img alt="Logo de Cuentas Claras" class="nav-logo h-10 sm:h-14 w-auto" src="../img/logo.svg"/>
-                <span class="hidden sm:block font-headline font-extrabold tracking-tight text-lg text-primary">Cuentas Claras</span>
+                <span class="brand-wordmark">Cuentas Claras</span>
             </a>
 
             <div class="hidden md:flex items-center gap-8">

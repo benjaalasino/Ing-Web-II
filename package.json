@@ -5,8 +5,5 @@
     "postinstall": "npm --prefix Backend install",
     "start": "npm --prefix Backend start",
     "dev": "npm --prefix Backend run dev"
-  },
-  "dependencies": {
-    "next-cloudinary": "^6.17.5"
   }
 }
