@@ -28,7 +28,14 @@ btnLogin.addEventListener('click', async () => {
         window.auth.saveAuth(data);
         window.location.href = window.auth.getHomeByRole(data.role);
     } catch (error) {
-        window.ui.showMessage(errorMessage, error.message, 'error');
+        if (error.message && error.message.includes('verificar tu email')) {
+            const verifyEmail = error.email || inputEmail.value.trim();
+            errorMessage.innerHTML = error.message + ' <a href="verify-email.html?email=' + encodeURIComponent(verifyEmail) + '">Verificar ahora &rarr;</a>';
+            errorMessage.classList.remove('hidden');
+            errorMessage.classList.add('error-message');
+        } else {
+            window.ui.showMessage(errorMessage, error.message, 'error');
+        }
         btnLogin.disabled = false;
         btnLogin.textContent = 'Entrar';
     }

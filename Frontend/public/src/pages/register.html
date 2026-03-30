@@ -37,6 +37,22 @@
             <div id="errorMessage" class="error-message hidden"></div>
             <div id="successMessage" class="success-message hidden"></div>
             <p class="auth-footer">Ya tenés cuenta? <a href="login.html">Iniciar sesión</a></p>
+
+            <!-- Verification step (hidden until register succeeds) -->
+            <div id="verifyStep" class="hidden" style="text-align:center;margin-top:1rem">
+                <p style="margin-bottom:0.75rem">Ingresá el código de 6 dígitos que te enviamos a <strong id="verifyEmail"></strong></p>
+                <div id="codeInputs" style="display:flex;gap:0.5rem;justify-content:center;margin-bottom:1rem">
+                    <input class="code-digit" type="text" maxlength="1" inputmode="numeric" style="width:3rem;height:3.5rem;text-align:center;font-size:1.5rem;font-weight:700;border-radius:8px;border:2px solid var(--border,#ddd)">
+                    <input class="code-digit" type="text" maxlength="1" inputmode="numeric" style="width:3rem;height:3.5rem;text-align:center;font-size:1.5rem;font-weight:700;border-radius:8px;border:2px solid var(--border,#ddd)">
+                    <input class="code-digit" type="text" maxlength="1" inputmode="numeric" style="width:3rem;height:3.5rem;text-align:center;font-size:1.5rem;font-weight:700;border-radius:8px;border:2px solid var(--border,#ddd)">
+                    <input class="code-digit" type="text" maxlength="1" inputmode="numeric" style="width:3rem;height:3.5rem;text-align:center;font-size:1.5rem;font-weight:700;border-radius:8px;border:2px solid var(--border,#ddd)">
+                    <input class="code-digit" type="text" maxlength="1" inputmode="numeric" style="width:3rem;height:3.5rem;text-align:center;font-size:1.5rem;font-weight:700;border-radius:8px;border:2px solid var(--border,#ddd)">
+                    <input class="code-digit" type="text" maxlength="1" inputmode="numeric" style="width:3rem;height:3.5rem;text-align:center;font-size:1.5rem;font-weight:700;border-radius:8px;border:2px solid var(--border,#ddd)">
+                </div>
+                <button id="btnVerify" class="btn btn-primary" type="button">Verificar</button>
+                <div id="verifyMsg" class="hidden" style="margin-top:0.75rem"></div>
+                <p style="margin-top:0.75rem;color:var(--muted);font-size:0.9rem">¿No recibiste el código? <button id="btnResendCode" type="button" style="color:#5c7aff;background:none;border:none;cursor:pointer;text-decoration:underline;font-size:0.9rem">Reenviar</button></p>
+            </div>
         </section>
     </main>
 

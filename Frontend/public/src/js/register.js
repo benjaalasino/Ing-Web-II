@@ -65,13 +65,88 @@ btnRegister.addEventListener('click', async () => {
             })
         });
 
-        window.ui.showMessage(successMessage, 'Cuenta creada exitosamente. Redirigiendo...', 'success');
-        setTimeout(() => {
-            window.location.href = 'login.html';
-        }, 1500);
+        showVerifyStep(inputEmail.value.trim());
     } catch (error) {
         window.ui.showMessage(errorMessage, error.message, 'error');
         btnRegister.disabled = false;
         btnRegister.textContent = 'Registrarse';
+    }
+});
+
+// ── Verification step (inline) ──
+var registeredEmail = '';
+var verifyStep = document.getElementById('verifyStep');
+var verifyEmailLabel = document.getElementById('verifyEmail');
+var codeDigits = document.querySelectorAll('.code-digit');
+var btnVerify = document.getElementById('btnVerify');
+var btnResendCode = document.getElementById('btnResendCode');
+var verifyMsg = document.getElementById('verifyMsg');
+
+function showVerifyStep(email) {
+    registeredEmail = email;
+    registerForm.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+    successMessage.classList.add('hidden');
+    document.querySelector('.auth-footer').classList.add('hidden');
+    document.querySelector('.section-title').textContent = 'Verificá tu email';
+    verifyEmailLabel.textContent = email;
+    verifyStep.classList.remove('hidden');
+    codeDigits[0].focus();
+}
+
+codeDigits.forEach(function (input, idx) {
+    input.addEventListener('input', function () {
+        input.value = input.value.replace(/\D/g, '').slice(0, 1);
+        if (input.value && idx < 5) codeDigits[idx + 1].focus();
+    });
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Backspace' && !input.value && idx > 0) codeDigits[idx - 1].focus();
+    });
+    input.addEventListener('paste', function (e) {
+        e.preventDefault();
+        var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+        for (var i = 0; i < 6; i++) codeDigits[i].value = paste[i] || '';
+        if (paste.length > 0) codeDigits[Math.min(paste.length, 5)].focus();
+    });
+});
+
+btnVerify.addEventListener('click', async function () {
+    var code = Array.from(codeDigits).map(function (i) { return i.value; }).join('');
+    if (code.length !== 6) {
+        window.ui.showMessage(verifyMsg, 'Ingresá los 6 dígitos.', 'error');
+        return;
+    }
+    btnVerify.disabled = true;
+    btnVerify.textContent = 'Verificando...';
+    window.ui.hideMessage(verifyMsg);
+
+    try {
+        await window.apiFetch('/auth/verify-email', {
+            method: 'POST',
+            body: JSON.stringify({ email: registeredEmail, code: code })
+        });
+        window.ui.showMessage(verifyMsg, 'Email verificado. Redirigiendo al login...', 'success');
+        setTimeout(function () { window.location.href = 'login.html'; }, 1500);
+    } catch (err) {
+        window.ui.showMessage(verifyMsg, err.message, 'error');
+        btnVerify.disabled = false;
+        btnVerify.textContent = 'Verificar';
+    }
+});
+
+btnResendCode.addEventListener('click', async function () {
+    btnResendCode.disabled = true;
+    btnResendCode.textContent = 'Enviando...';
+    try {
+        var data = await window.apiFetch('/auth/resend-verification', {
+            method: 'POST',
+            body: JSON.stringify({ email: registeredEmail })
+        });
+        window.ui.showMessage(verifyMsg, data.message, 'success');
+    } catch (err) {
+        window.ui.showMessage(verifyMsg, err.message, 'error');
+    } finally {
+        btnResendCode.disabled = false;
+        btnResendCode.textContent = 'Reenviar';
     }
 });

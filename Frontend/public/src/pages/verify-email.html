@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuentas Claras | Verificar Email</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/app.css">
+    <style>
+        .auth-wrap { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
+        .auth-card { width: min(440px, 100%); text-align: center; }
+        .verify-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+        .verify-title { margin-bottom: 0.5rem; }
+        .verify-msg { color: var(--muted); margin-bottom: 1.2rem; }
+        .code-inputs { display: flex; gap: 0.5rem; justify-content: center; margin: 1.2rem 0; }
+        .code-inputs input {
+            width: 3rem; height: 3.5rem; text-align: center;
+            font-size: 1.5rem; font-weight: 700; border-radius: 8px;
+            border: 2px solid var(--border, #ddd);
+        }
+        .code-inputs input:focus { border-color: #5c7aff; outline: none; }
+        .resend-link { margin-top: 1rem; color: var(--muted); font-size: 0.9rem; }
+        .resend-link a, .resend-link button { color: #5c7aff; background: none; border: none; cursor: pointer; text-decoration: underline; font-size: 0.9rem; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <main class="auth-wrap">
+        <section class="card auth-card">
+            <a class="brand" href="index.html" style="display:flex;align-items:center;gap:0;justify-content:center"><img src="../img/logo.svg" alt="Logo" style="height:5rem;width:auto"><span style="margin-left:-0.25rem">Cuentas Claras</span></a>
+
+            <!-- State: enter code -->
+            <div id="stateCode">
+                <div class="verify-icon">📧</div>
+                <h1 class="section-title verify-title">Verificá tu email</h1>
+                <p class="verify-msg">Ingresá el código de 6 dígitos que te enviamos a <strong id="displayEmail"></strong></p>
+                <div class="code-inputs">
+                    <input id="c1" type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code">
+                    <input id="c2" type="text" maxlength="1" inputmode="numeric">
+                    <input id="c3" type="text" maxlength="1" inputmode="numeric">
+                    <input id="c4" type="text" maxlength="1" inputmode="numeric">
+                    <input id="c5" type="text" maxlength="1" inputmode="numeric">
+                    <input id="c6" type="text" maxlength="1" inputmode="numeric">
+                </div>
+                <button id="btnVerify" class="btn btn-primary" type="button">Verificar</button>
+                <div id="verifyMsg" class="hidden" style="margin-top:0.75rem"></div>
+                <p class="resend-link">¿No recibiste el código? <button id="btnResend" type="button">Reenviar código</button></p>
+            </div>
+
+            <!-- State: success -->
+            <div id="stateSuccess" class="hidden">
+                <div class="verify-icon">✅</div>
+                <h1 class="section-title verify-title">Email verificado</h1>
+                <p class="verify-msg">Tu cuenta está activa. Ya podés iniciar sesión.</p>
+                <a href="login.html" class="btn btn-primary">Ir al login</a>
+            </div>
+
+            <!-- State: no email -->
+            <div id="stateNoEmail" class="hidden">
+                <div class="verify-icon">📧</div>
+                <h1 class="section-title verify-title">Verificación de email</h1>
+                <p class="verify-msg">Ingresá tu email para recibir un código de verificación.</p>
+                <label>
+                    <input id="inputEmailManual" type="email" placeholder="tu@email.com" style="width:100%">
+                </label>
+                <button id="btnSendCode" class="btn btn-primary" type="button" style="margin-top:0.75rem">Enviar código</button>
+                <div id="sendCodeMsg" class="hidden" style="margin-top:0.75rem"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/verify-email.js"></script>
+</body>
+</html>

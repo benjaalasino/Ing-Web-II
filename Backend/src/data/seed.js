@@ -9,9 +9,9 @@ module.exports = async (pool) => {
     const userPass = await bcrypt.hash('123456', 10);
 
     await pool.query(`
-        INSERT INTO users (name, email, password, role, created_at) VALUES
-        ($1, $2, $3, 'advisor', '2025-01-15T00:00:00Z'),
-        ($4, $5, $6, 'user', '2025-02-10T00:00:00Z')
+        INSERT INTO users (name, email, password, role, email_verified, created_at) VALUES
+        ($1, $2, $3, 'advisor', TRUE, '2025-01-15T00:00:00Z'),
+        ($4, $5, $6, 'user', TRUE, '2025-02-10T00:00:00Z')
     `, ['Asesor Demo', 'advisor@wisepocket.com', advisorPass, 'Usuario Demo', 'user@wisepocket.com', userPass]);
 
     // Get seeded user IDs
