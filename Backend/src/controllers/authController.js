@@ -168,7 +168,7 @@ const resendVerification = async (req, res) => {
     try {
         await sendVerificationCode(normalizedEmail, code);
     } catch (err) {
-        console.error('[Resend] Failed to send verification code:', err.message);
+        console.error('[Email] Failed to send verification code:', err.message);
     }
 
     res.status(200).json({ statusCode: 200, message: genericMessage });

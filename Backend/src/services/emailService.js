@@ -1,31 +1,26 @@
-const { Resend } = require('resend');
-const { resendApiKey, appFrom } = require('../config/env');
-
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const { n8nWebhookUrl } = require('../config/env');
 
 const sendVerificationCode = async (to, code) => {
-    if (!resend) {
-        console.log(`[Dev] RESEND_API_KEY not set. Verification code for ${to}: ${code}`);
+    if (!n8nWebhookUrl) {
+        console.log(`[Dev] N8N_WEBHOOK_URL not set. Verification code for ${to}: ${code}`);
         return;
     }
 
-    console.log(`[Email] Sending verification code to ${to} from ${appFrom}`);
+    console.log(`[Email] Sending verification code to ${to} via n8n`);
 
-    const html = `${code}`;
-
-    const { data, error } = await resend.emails.send({
-        from: appFrom,
-        to: [to],
-        subject: `${code} — Código de verificación — Cuentas Claras`,
-        html
+    const res = await fetch(n8nWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to, code })
     });
 
-    if (error) {
-        console.error(`[Email] Resend error:`, error);
-        throw new Error(`Resend: ${error.message}`);
+    if (!res.ok) {
+        const body = await res.text();
+        console.error(`[Email] n8n webhook error (${res.status}):`, body);
+        throw new Error(`n8n webhook ${res.status}: ${body}`);
     }
 
-    console.log(`[Email] Verification code sent to ${to} (id: ${data.id})`);
+    console.log(`[Email] Verification code sent to ${to} via n8n`);
 };
 
 module.exports = { sendVerificationCode };
