@@ -65,6 +65,11 @@ body.has-app-shell .layout{max-width:none;margin:0;margin-left:var(--sidebar-w);
     font-weight:700;text-decoration:none;padding:.4rem .5rem;font-size:1.125rem;
 }
 .brand-logo{height:5rem;width:auto;flex-shrink:0}
+.brand-name{
+    font-family:'Plus Jakarta Sans','Segoe UI',system-ui,sans-serif;
+    font-size:.95rem;font-weight:700;color:var(--primary);
+    letter-spacing:-.01em;white-space:nowrap;line-height:1.1;
+}
 .brand-mark{
     width:2rem;height:2rem;border-radius:50%;background:var(--primary);
     color:var(--primary-fg);display:grid;place-items:center;font-size:.7rem;
@@ -225,6 +230,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)
     }
     .mobile-menu-btn:hover{background:var(--surface-soft)}
     .app-shell{transform:translateX(-100%);transition:transform .25s ease;z-index:120}
+    .brand-name{display:none}
     body.nav-open .app-shell{transform:translateX(0)}
     .app-topbar{left:0}
     body.has-app-shell .layout{margin-left:0}

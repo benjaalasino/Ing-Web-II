@@ -55,7 +55,6 @@ Backend/
     │   ├── userController.js
     │   ├── recommendationController.js
     │   ├── ticketController.js
-    │   ├── mercadoPagoController.js
     │   └── healthController.js
     ├── routes/                ← Define QUE URL apunta a QUE controller
     │   ├── authRoutes.js
@@ -65,7 +64,6 @@ Backend/
     │   ├── userRoutes.js
     │   ├── recommendationRoutes.js
     │   ├── ticketRoutes.js
-    │   ├── mercadoPagoRoutes.js
     │   └── healthRoutes.js
     ├── middlewares/            ← Funciones que se ejecutan ANTES del controller
     │   ├── authMiddleware.js  ← Verifica el token JWT (autenticacion)
@@ -73,7 +71,6 @@ Backend/
     │   ├── errorHandler.js    ← Manejo global de errores
     │   └── uploadMiddleware.js← Manejo de subida de imagenes (multer)
     ├── services/              ← Logica de negocio compleja
-    │   ├── mercadoPagoService.js
     │   ├── azureDocumentService.js
     │   └── receiptMapperService.js
     └── utils/                 ← Funciones auxiliares reutilizables
@@ -141,7 +138,7 @@ Esto significa que:
 
 --- TABLAS ---
 
-La base tiene 6 tablas:
+La base tiene 4 tablas:
 
 ┌─────────────────────────────────────────────────────────────┐
 │ users                                                       │
@@ -191,38 +188,11 @@ La base tiene 6 tablas:
 │ created_at   │ TIMESTAMPTZ  │                                │
 └──────────────┴──────────────┴───────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────┐
-│ mp_tokens                                                   │
-├──────────────┬──────────────┬───────────────────────────────┤
-│ id (PK)      │ SERIAL       │                                │
-│ user_id (FK) │ INTEGER      │ UNIQUE → un token por usuario  │
-│ access_token │ TEXT         │ Token de MercadoPago            │
-│ mp_user_id   │ VARCHAR(100) │ ID del usuario en MP            │
-│ created_at   │ TIMESTAMPTZ  │                                │
-└──────────────┴──────────────┴───────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│ mp_payments                                                 │
-├──────────────┬──────────────┬───────────────────────────────┤
-│ id (PK)      │ SERIAL       │                                │
-│ user_id (FK) │ INTEGER      │ → users(id)                    │
-│ mp_payment_id│ VARCHAR(100) │ ID del pago en MercadoPago     │
-│ description  │ TEXT         │ Descripcion del pago            │
-│ amount       │ NUMERIC(12,2)│                                │
-│ date         │ DATE         │                                │
-│ category     │ VARCHAR(50)  │ Auto-categorizado               │
-│ payment_method│VARCHAR(50)  │ credit_card, debit_card, etc.  │
-│ created_at   │ TIMESTAMPTZ  │                                │
-│ UNIQUE(user_id, mp_payment_id) ← evita duplicados           │
-└──────────────┴──────────────┴───────────────────────────────┘
-
 --- RELACIONES ---
 
     users ──< expenses        (un usuario tiene muchos gastos)
     users ──< budgets         (un usuario tiene muchos presupuestos)
     users ──< recommendations (un usuario recibe muchas recomendaciones)
-    users ──< mp_tokens       (un usuario tiene UN token de MP)
-    users ──< mp_payments     (un usuario tiene muchos pagos de MP)
 
 ON DELETE CASCADE significa que si borras un usuario, se borran
 automaticamente todos sus gastos, presupuestos, etc.
@@ -361,100 +331,11 @@ GET  /api/users/:id/stats        → Ver estadisticas de un usuario
 --- TICKETS ---
 POST /api/tickets/upload         → Subir imagen de ticket (OCR con Azure)
 
---- MERCADOPAGO ---
-GET  /api/mercadopago/status     → ¿Tengo MP conectado?
-POST /api/mercadopago/connect    → Conectar con Access Token
-POST /api/mercadopago/disconnect → Desconectar
-GET  /api/mercadopago/payments   → Ver gastos capturados por MP
-POST /api/mercadopago/webhook    → Webhook que recibe notificaciones de MP
-
 --- HEALTH ---
 GET  /api/health                 → Devuelve { ok: true } (para monitoreo)
 
 ================================================================================
-8. MERCADOPAGO - COMO FUNCIONA
-================================================================================
-
-La integracion con MercadoPago permite registrar gastos automaticamente
-cuando el usuario paga algo con transferencia o QR.
-
---- CONCEPTO: WEBHOOK ---
-
-Un webhook es una URL que vos le das a un servicio externo (en este caso
-MercadoPago) para que te AVISE cuando pasa algo. En vez de preguntar todo
-el tiempo "¿hubo un pago?", MercadoPago te avisa mandando un POST a tu URL.
-
-Es como dejar tu numero de telefono en un negocio para que te avisen
-cuando llega un producto, en vez de ir a preguntar todos los dias.
-
---- FLUJO COMPLETO ---
-
-PASO 1: CONECTAR LA CUENTA
-- El usuario va a Perfil en la app
-- Pega su Access Token de MercadoPago (se obtiene del panel de desarrollador de MP)
-- El backend hace POST a https://api.mercadopago.com/users/me con ese token
-  para verificar que sea valido y obtener el mp_user_id
-- Si es valido, guarda el token y el mp_user_id en tabla mp_tokens
-
-PASO 2: CONFIGURAR WEBHOOK EN MERCADOPAGO
-- En el panel de desarrollador de MercadoPago, el usuario configura:
-  URL: https://tu-dominio.railway.app/api/mercadopago/webhook
-  Evento: payment
-- Esto le dice a MP: "cada vez que haya un pago, mandame un POST a esa URL"
-
-PASO 3: EL USUARIO HACE UN PAGO (transferencia, QR, etc.)
-
-PASO 4: MP ENVIA EL WEBHOOK
-- MP manda un POST al backend con algo como:
-  { "type": "payment", "data": { "id": "12345678" } }
-- Es decir, solo te dice el ID del pago, no los detalles
-
-PASO 5: EL BACKEND PROCESA EL WEBHOOK
-- Recibe el POST, responde inmediatamente con 200 OK (MP necesita respuesta rapida)
-- Busca en mp_tokens TODOS los tokens guardados
-- Para cada token, consulta a la API de MP:
-  GET https://api.mercadopago.com/v1/payments/12345678
-  Authorization: Bearer <access_token>
-- Si la API responde con el pago, verifica:
-  a) ¿El pago esta approved? Si no, lo ignora
-  b) ¿El payer.id coincide con el mp_user_id? Esto es CLAVE:
-     - Si YO pague, payer.id === mi mp_user_id → es un GASTO mio ✓
-     - Si ME pagaron a mi, payer.id != mi mp_user_id → NO es un gasto ✗
-  c) ¿Ya esta registrado? (evita duplicados)
-- Si pasa todas las verificaciones, lo guarda en mp_payments con:
-  - Descripcion del pago
-  - Monto
-  - Fecha
-  - Categoria auto-detectada (por keywords en la descripcion)
-  - Metodo de pago (credit_card, debit_card, etc.)
-
-PASO 6: EL USUARIO VE EL GASTO
-- En la pagina de MercadoPago de la app, el frontend hace:
-  GET /api/mercadopago/payments
-- El backend busca en mp_payments los pagos de ese usuario
-- Se muestran en una tabla con filtros (categoria, mes, ano)
-
---- CATEGORIZACION AUTOMATICA ---
-
-La funcion categorizeMpPayment analiza la descripcion del pago:
-- Si dice "supermercado", "coto", "dia", etc. → Supermercado
-- Si dice "farmacia", "farmacity", etc. → Salud
-- Si dice "uber", "sube", "nafta", etc. → Transporte
-- Si dice "netflix", "spotify", "cine", etc. → Entretenimiento
-- Si dice "udemy", "libro", etc. → Educacion
-- Si dice "restaurante", "pizza", "cafe", etc. → Comida
-- Si no coincide con nada → Otros
-
---- FORMATOS DE WEBHOOK ---
-
-MercadoPago puede mandar webhooks en distintos formatos segun la config:
-- Formato Webhooks: { type: "payment", data: { id: "123" } }
-- Formato IPN: ?topic=payment&id=123
-- En el body: { topic: "payment", id: "123" }
-El backend maneja todos estos formatos para Mayor compatibilidad.
-
-================================================================================
-9. ROLES DE USUARIO
+8. ROLES DE USUARIO
 ================================================================================
 
 Hay 2 roles:
@@ -463,7 +344,6 @@ USER (usuario comun):
 - Puede ver/crear/editar/borrar sus propios gastos
 - Puede ver/crear/editar/borrar sus presupuestos
 - Puede subir tickets
-- Puede conectar MercadoPago
 - Puede ver recomendaciones que le enviaron
 
 ADVISOR (asesor financiero):
@@ -475,7 +355,7 @@ ADVISOR (asesor financiero):
 La distincion se hace con requireRole('advisor') en las rutas.
 
 ================================================================================
-10. COMO SE SIRVE EL FRONTEND
+9. COMO SE SIRVE EL FRONTEND
 ================================================================================
 
 El backend tambien sirve los archivos del frontend. En app.js:
@@ -489,7 +369,7 @@ Esto permite que el frontend y backend corran en el mismo servidor
 (un solo servicio en Railway en vez de dos).
 
 ================================================================================
-11. VARIABLES DE ENTORNO
+10. VARIABLES DE ENTORNO
 ================================================================================
 
 Las variables de entorno son valores de configuracion que NO van en el
@@ -504,7 +384,7 @@ AZURE_DOCUMENT_INTELLIGENCE_KEY   → Key de Azure (opcional)
 En desarrollo local, se pueden poner en un archivo .env en la carpeta Backend/
 
 ================================================================================
-12. DEPENDENCIAS (package.json)
+11. DEPENDENCIAS (package.json)
 ================================================================================
 
 express       → Framework web (maneja rutas, peticiones HTTP)
@@ -516,7 +396,7 @@ dotenv        → Leer variables de entorno desde archivo .env
 multer        → Subida de archivos (imagenes de tickets)
 
 ================================================================================
-13. DEPLOY EN RAILWAY
+12. DEPLOY EN RAILWAY
 ================================================================================
 
 Railway es una plataforma de hosting como Heroku.
@@ -536,19 +416,17 @@ La DATABASE_URL del PostgreSQL se configura como variable de entorno
 en el servicio de Backend.
 
 ================================================================================
-14. SEGURIDAD IMPLEMENTADA
+13. SEGURIDAD IMPLEMENTADA
 ================================================================================
 
 - Passwords hasheadas con bcrypt (nunca texto plano)
 - JWT con expiracion de 12 horas
 - Prepared statements ($1, $2) en todas las queries SQL (previene SQL injection)
 - Validacion de inputs en todos los endpoints
-- Access Token de MP guardado en la BD (no expuesto al frontend)
-- Webhook verifica que el pago sea del usuario correcto (payer.id === mp_user_id)
 - CORS habilitado para controlar origenes de peticiones
 - Archivos subidos validados por tipo y tamaño (max 5MB, solo JPG/PNG/WEBP)
 - ON DELETE CASCADE en foreign keys (limpieza automatica de datos)
-- Constraint UNIQUE donde corresponde (email, budget por categoria/mes, mp_payment_id)
+- Constraint UNIQUE donde corresponde (email, budget por categoria/mes)
 
 ================================================================================
 FIN DEL DOCUMENTO
