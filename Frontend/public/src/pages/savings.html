@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuentas Claras | Metas de ahorro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/app.css">
+</head>
+<body>
+    <div id="appHeader"></div>
+    <main class="layout grid-2">
+        <section class="card">
+            <h1 class="section-title">Mis metas de ahorro</h1>
+            <div id="savingsGoalsContainer" style="margin-top:.8rem;"></div>
+            <div id="savingsMessage" class="hidden"></div>
+        </section>
+
+        <section class="card">
+            <h2 class="section-title" id="savingsFormTitle">Nueva meta</h2>
+            <form id="savingsForm">
+                <label>Nombre de la meta
+                    <input id="inputSavingsTitle" type="text" placeholder="Ej: Vacaciones, notebook, fondo de emergencia" required>
+                </label>
+                <label>Monto objetivo
+                    <input id="inputSavingsTarget" type="number" min="1" step="0.01" placeholder="0" required>
+                </label>
+                <label>Fecha limite (opcional)
+                    <input id="inputSavingsDeadline" type="date">
+                </label>
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                    <button id="btnSaveSavings" class="btn btn-primary" type="button">Guardar meta</button>
+                    <button id="btnCancelSavings" class="btn btn-secondary hidden" type="button">Cancelar</button>
+                </div>
+            </form>
+            <div id="savingsFormMessage" class="hidden"></div>
+
+            <div id="depositSection" class="hidden" style="margin-top:1.2rem;border-top:1px solid #d7e6da;padding-top:1rem;">
+                <h3 class="section-title" style="font-size:.95rem;">Registrar movimiento</h3>
+                <label>Monto (positivo para depositar, negativo para retirar)
+                    <input id="inputDepositAmount" type="number" step="0.01" placeholder="0">
+                </label>
+                <button id="btnDeposit" class="btn btn-primary" type="button">Registrar</button>
+                <div id="depositMessage" class="hidden"></div>
+            </div>
+        </section>
+    </main>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ui.js"></script>
+    <script src="../js/layout.js"></script>
+    <script src="../js/savings.js"></script>
+</body>
+</html>

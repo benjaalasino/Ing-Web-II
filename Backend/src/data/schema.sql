@@ -58,3 +58,13 @@ CREATE TABLE IF NOT EXISTS mp_payments (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE(user_id, mp_payment_id)
 );
+
+CREATE TABLE IF NOT EXISTS savings_goals (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    target_amount NUMERIC(12,2) NOT NULL,
+    current_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+    deadline DATE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

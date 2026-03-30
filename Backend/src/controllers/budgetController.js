@@ -127,10 +127,72 @@ const getBudgetProgress = async (req, res) => {
     res.json(result);
 };
 
+const getBudgetPredictions = async (req, res) => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const month = Number(req.query.month || currentMonth);
+    const year = Number(req.query.year || currentYear);
+
+    if (month !== currentMonth || year !== currentYear) {
+        res.json([]);
+        return;
+    }
+
+    const dayOfMonth = now.getDate();
+    const totalDaysInMonth = new Date(year, month, 0).getDate();
+
+    const { rows: userBudgets } = await pool.query(
+        'SELECT * FROM budgets WHERE user_id = $1 AND month = $2 AND year = $3',
+        [req.auth.userId, month, year]
+    );
+
+    const predictions = [];
+    for (const budget of userBudgets) {
+        const { rows: spentRows } = await pool.query(
+            `SELECT COALESCE(SUM(amount), 0) AS spent FROM expenses
+             WHERE user_id = $1 AND category = $2 AND EXTRACT(MONTH FROM date) = $3 AND EXTRACT(YEAR FROM date) = $4`,
+            [req.auth.userId, budget.category, month, year]
+        );
+
+        const spent = Number(spentRows[0].spent);
+        const budgetAmount = Number(budget.amount);
+        const dailyRate = dayOfMonth > 0 ? spent / dayOfMonth : 0;
+        const projectedTotal = dailyRate * totalDaysInMonth;
+        const daysUntilOver = dailyRate > 0 ? (budgetAmount - spent) / dailyRate : null;
+
+        let status = 'on_track';
+        if (projectedTotal > budgetAmount) {
+            status = 'danger';
+        } else if (projectedTotal > budgetAmount * 0.85) {
+            status = 'warning';
+        }
+
+        if (daysUntilOver !== null && daysUntilOver < 5 && daysUntilOver >= 0) {
+            status = 'danger';
+        }
+
+        predictions.push({
+            budgetId: budget.id,
+            category: budget.category,
+            budgetAmount,
+            spent,
+            dailyRate: Math.round(dailyRate),
+            projectedTotal: Math.round(projectedTotal),
+            daysUntilOver: daysUntilOver !== null ? Math.max(0, Math.round(daysUntilOver)) : null,
+            daysRemaining: totalDaysInMonth - dayOfMonth,
+            status
+        });
+    }
+
+    res.json(predictions.filter((p) => p.status !== 'on_track' || p.projectedTotal > 0));
+};
+
 module.exports = {
     getBudgets,
     createBudget,
     updateBudget,
     deleteBudget,
-    getBudgetProgress
+    getBudgetProgress,
+    getBudgetPredictions
 };

@@ -7,6 +7,7 @@ window.layout.renderHeader('budgets.html');
 const selectBudgetMonth = document.getElementById('selectBudgetMonth');
 const selectBudgetYear = document.getElementById('selectBudgetYear');
 const budgetsProgressContainer = document.getElementById('budgetsProgressContainer');
+const budgetPredictionsContainer = document.getElementById('budgetPredictionsContainer');
 const budgetMessage = document.getElementById('budgetMessage');
 
 const budgetFormTitle = document.getElementById('budgetFormTitle');
@@ -81,6 +82,49 @@ const resetFormMode = () => {
     renderCategoryOptions();
 };
 
+const renderPredictions = (predictions) => {
+    if (!budgetPredictionsContainer) return;
+    if (!predictions.length) {
+        budgetPredictionsContainer.innerHTML = '';
+        return;
+    }
+
+    const alerts = predictions.filter((p) => p.status === 'danger' || p.status === 'warning');
+    if (!alerts.length) {
+        budgetPredictionsContainer.innerHTML = '';
+        return;
+    }
+
+    const items = alerts.map((p) => {
+        const isDanger = p.status === 'danger';
+        const color = isDanger ? '#991b1b' : '#b45309';
+        const bg = isDanger ? '#fef2f2' : '#fffbeb';
+        const border = isDanger ? '#fecaca' : '#fde68a';
+        const icon = isDanger ? '⚠️' : '📊';
+
+        let message = '';
+        if (p.daysUntilOver !== null && p.daysUntilOver <= 14) {
+            message = p.daysUntilOver === 0
+                ? `Agotaste el presupuesto de <strong>${p.category}</strong>.`
+                : `El presupuesto de <strong>${p.category}</strong> se agota en <strong>${p.daysUntilOver} día${p.daysUntilOver !== 1 ? 's' : ''}</strong>.`;
+        } else {
+            message = `<strong>${p.category}</strong>: proyectás gastar ${window.ui.formatCurrency(p.projectedTotal)} de ${window.ui.formatCurrency(p.budgetAmount)} este mes.`;
+        }
+
+        return `<div style="background:${bg};border:1px solid ${border};border-radius:.6rem;padding:.65rem .85rem;font-size:.85rem;color:${color};display:flex;gap:.5rem;align-items:flex-start;">
+            <span style="flex-shrink:0;line-height:1.4;">${icon}</span>
+            <span>${message}</span>
+        </div>`;
+    }).join('');
+
+    budgetPredictionsContainer.innerHTML = `
+        <div style="margin-bottom:.5rem;">
+            <p style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#4a5f4d;margin-bottom:.45rem;">Predicciones del mes</p>
+            <div style="display:flex;flex-direction:column;gap:.4rem;">${items}</div>
+        </div>
+    `;
+};
+
 const renderProgress = () => {
     if (!currentProgress.length) {
         budgetsProgressContainer.innerHTML = '<p>No definiste presupuestos para este mes. Crea uno.</p>';
@@ -134,7 +178,12 @@ const renderProgress = () => {
 
 const loadBudgetData = async () => {
     const { month, year } = getSelectedMonthYear();
-    currentProgress = await window.apiFetch(`/budgets/progress?month=${month}&year=${year}`);
+    const [progress, predictions] = await Promise.all([
+        window.apiFetch(`/budgets/progress?month=${month}&year=${year}`),
+        window.apiFetch(`/budgets/predictions?month=${month}&year=${year}`).catch(() => [])
+    ]);
+    currentProgress = progress;
+    renderPredictions(predictions);
     renderProgress();
     renderCategoryOptions();
 };
