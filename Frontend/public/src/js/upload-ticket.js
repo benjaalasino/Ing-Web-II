@@ -32,13 +32,29 @@ window.ui.CATEGORIES.forEach((category) => {
 const setMode = (mode) => {
     const ticketMode = mode === 'ticket';
     ticketUploadArea.classList.toggle('hidden', !ticketMode);
-    modeManual.className = `btn ${ticketMode ? 'btn-secondary' : 'btn-primary'}`;
-    modeTicket.className = `btn ${ticketMode ? 'btn-primary' : 'btn-secondary'}`;
+    modeManual.className = `btn ${ticketMode ? 'btn-outline-secondary' : 'btn-primary'}`;
+    modeTicket.className = `btn ${ticketMode ? 'btn-primary' : 'btn-outline-secondary'}`;
 };
 
 setMode('manual');
 modeManual.addEventListener('click', () => setMode('manual'));
 modeTicket.addEventListener('click', () => setMode('ticket'));
+
+// Drop zone interactions
+const dropZone = document.getElementById('dropZone');
+if (dropZone) {
+    dropZone.addEventListener('click', () => inputTicketImage.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files.length) {
+            inputTicketImage.files = e.dataTransfer.files;
+            inputTicketImage.dispatchEvent(new Event('change'));
+        }
+    });
+}
 
 const resetWarningBorders = () => {
     [inputCommerce, inputDate, inputAmount].forEach((field) => {
