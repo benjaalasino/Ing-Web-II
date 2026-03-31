@@ -42,26 +42,7 @@ CREATE TABLE IF NOT EXISTS recommendations (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS mp_tokens (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    access_token TEXT NOT NULL,
-    mp_user_id VARCHAR(100),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
 
-CREATE TABLE IF NOT EXISTS mp_payments (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    mp_payment_id VARCHAR(100) NOT NULL,
-    description TEXT,
-    amount NUMERIC(12,2) NOT NULL,
-    date DATE NOT NULL,
-    category VARCHAR(50) NOT NULL,
-    payment_method VARCHAR(50),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(user_id, mp_payment_id)
-);
 
 CREATE TABLE IF NOT EXISTS savings_goals (
     id SERIAL PRIMARY KEY,
