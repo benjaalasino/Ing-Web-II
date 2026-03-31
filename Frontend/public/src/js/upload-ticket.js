@@ -51,9 +51,9 @@ const validateImage = (file) => {
         return 'Selecciona una imagen.';
     }
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-        return 'Formato invalido. Usa JPG, PNG o WEBP.';
+        return 'Formato invalido. Usa JPG, PNG, WEBP o PDF.';
     }
 
     if (file.size > 5 * 1024 * 1024) {
@@ -77,10 +77,15 @@ inputTicketImage.addEventListener('change', () => {
     }
 
     selectedFile = file;
-    ticketPreview.src = URL.createObjectURL(file);
-    ticketPreview.classList.remove('hidden');
+    if (file.type === 'application/pdf') {
+        ticketPreview.classList.add('hidden');
+        ticketProcessingStatus.textContent = 'PDF seleccionado: ' + file.name;
+    } else {
+        ticketPreview.src = URL.createObjectURL(file);
+        ticketPreview.classList.remove('hidden');
+        ticketProcessingStatus.textContent = '';
+    }
     btnProcessTicket.classList.remove('hidden');
-    ticketProcessingStatus.textContent = '';
 });
 
 btnProcessTicket.addEventListener('click', async () => {

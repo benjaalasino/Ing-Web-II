@@ -1,27 +1,4 @@
-const { analyzeWithAzureInvoiceModel } = require('../services/azureDocumentService');
-const { mapExtractedInvoice } = require('../services/receiptMapperService');
-
-const normalizeDate = (value) => {
-    if (!value) {
-        return null;
-    }
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return value;
-    }
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return null;
-    }
-    return date.toISOString().slice(0, 10);
-};
-
-const parseAmount = (value) => {
-    if (value === null || value === undefined) {
-        return null;
-    }
-    const numeric = Number(String(value).replace(/[^\d.,-]/g, '').replace(',', '.'));
-    return Number.isFinite(numeric) ? numeric : null;
-};
+const { n8nOcrWebhookUrl } = require('../config/env');
 
 const uploadTicket = async (req, res) => {
     if (!req.file) {
@@ -29,26 +6,40 @@ const uploadTicket = async (req, res) => {
         return;
     }
 
-    try {
-        const analysisResult = await analyzeWithAzureInvoiceModel(req.file.buffer, req.file.mimetype);
-        const extractedData = mapExtractedInvoice(analysisResult);
-
-        res.status(201).json({
-            commerce: extractedData.vendorName,
-            date: normalizeDate(extractedData.invoiceDate),
-            amount: parseAmount(extractedData.invoiceTotal),
-            imageUrl: null
-        });
-    } catch (error) {
-        // Fallback para entornos locales sin OCR configurado.
+    if (!n8nOcrWebhookUrl) {
         res.status(201).json({
             commerce: null,
             date: null,
             amount: null,
-            imageUrl: null,
-            warning: 'No se pudo procesar con IA en este entorno, completa los campos manualmente.'
+            warning: 'OCR no configurado. Completa los campos manualmente.'
         });
+        return;
     }
+
+    const base64Image = req.file.buffer.toString('base64');
+
+    const response = await fetch(n8nOcrWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            image: base64Image,
+            mimeType: req.file.mimetype,
+            fileName: req.file.originalname
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error del servicio OCR: ${errorText}`);
+    }
+
+    const data = await response.json();
+
+    res.status(201).json({
+        commerce: data.commerce || null,
+        date: data.date || null,
+        amount: data.amount != null ? Number(data.amount) : null
+    });
 };
 
 module.exports = {
