@@ -33,6 +33,11 @@ let cachedData = {
     recommendations: []
 };
 
+const getUnusualExpenses = () => {
+    const average = Number(cachedData.stats.monthlyAverage || 0);
+    return cachedData.expenses.filter((expense) => Number(expense.amount) > average * 3);
+};
+
 const renderHeaderData = () => {
     userTitle.textContent = cachedData.user.name;
     userSubtitle.textContent = `${cachedData.user.email} - Usuario desde ${window.ui.formatDate(cachedData.user.createdAt)}`;
@@ -47,49 +52,16 @@ const renderCards = () => {
         .sort((a, b) => b[1] - a[1])[0]?.[0] || 'Sin datos';
 
     const average = Number(cachedData.stats.monthlyAverage || 0);
-    const unusual = cachedData.expenses.filter((expense) => Number(expense.amount) > average * 3);
 
     userCardMonth.textContent = window.ui.formatCurrency(monthTotal);
     userCardAverage.textContent = window.ui.formatCurrency(average);
     userCardTopCategory.textContent = topCategory;
-    userCardUnusual.textContent = String(unusual.length);
+    userCardUnusual.textContent = String(getUnusualExpenses().length);
 };
 
 const renderCharts = () => {
-    const categoryEntries = Object.entries(cachedData.stats.totalByCategory || {});
-
-    new Chart(chartCategory, {
-        type: 'doughnut',
-        data: {
-            labels: categoryEntries.map(([label]) => label),
-            datasets: [{
-                data: categoryEntries.map(([, value]) => value),
-                backgroundColor: categoryEntries.map(([label]) => window.ui.CATEGORY_COLORS[label] || '#6b7280')
-            }]
-        },
-        options: {
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-
-    const monthEntries = Object.entries(cachedData.stats.totalByMonth || {}).sort((a, b) => a[0].localeCompare(b[0]));
-    new Chart(chartMonthly, {
-        type: 'bar',
-        data: {
-            labels: monthEntries.map(([key]) => {
-                const [year, month] = key.split('-');
-                return `${window.ui.monthName(month).slice(0, 3)} ${year}`;
-            }),
-            datasets: [{
-                data: monthEntries.map(([, amount]) => amount),
-                backgroundColor: '#0f766e'
-            }]
-        }
-    });
+    window.ui.renderDoughnutChart(chartCategory, cachedData.stats.totalByCategory);
+    window.ui.renderBarChart(chartMonthly, cachedData.stats.totalByMonth);
 };
 
 const renderExpenses = () => {
@@ -116,7 +88,7 @@ const renderPatterns = () => {
     const monthTop = Object.entries(totalByMonth).sort((a, b) => b[1] - a[1])[0];
     const categoryTop = Object.entries(totalByCategory).sort((a, b) => b[1] - a[1])[0];
     const average = Number(cachedData.stats.monthlyAverage || 0);
-    const unusual = cachedData.expenses.filter((expense) => Number(expense.amount) > average * 3);
+    const unusual = getUnusualExpenses();
 
     const unusualRows = unusual.length
         ? `<table><thead><tr><th>Fecha</th><th>Comercio</th><th>Monto</th><th>Estado</th></tr></thead><tbody>${unusual.map((item) => `<tr><td>${window.ui.formatDate(item.date)}</td><td>${item.commerce}</td><td>${window.ui.formatCurrency(item.amount)}</td><td>Gasto inusual</td></tr>`).join('')}</tbody></table>`

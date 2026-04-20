@@ -46,61 +46,15 @@ const renderCards = (stats, expenses, budgetProgress) => {
 };
 
 const renderCategoryChart = (stats) => {
-    const entries = Object.entries(stats.totalByCategory || {}).filter(([, amount]) => Number(amount) > 0);
-
-    if (!entries.length) {
-        chartCategoryEl.classList.add('hidden');
-        chartCategoryEmpty.classList.remove('hidden');
-        return;
-    }
-
-    chartCategoryEl.classList.remove('hidden');
-    chartCategoryEmpty.classList.add('hidden');
-
-    new Chart(chartCategoryEl, {
-        type: 'doughnut',
-        data: {
-            labels: entries.map(([category]) => category),
-            datasets: [{
-                data: entries.map(([, amount]) => amount),
-                backgroundColor: entries.map(([category]) => window.ui.CATEGORY_COLORS[category] || '#6b7280')
-            }]
-        },
-        options: {
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
+    const chart = window.ui.renderDoughnutChart(chartCategoryEl, stats.totalByCategory);
+    chartCategoryEl.classList.toggle('hidden', !chart);
+    chartCategoryEmpty.classList.toggle('hidden', !!chart);
 };
 
 const renderMonthlyChart = (stats) => {
-    const entries = Object.entries(stats.totalByMonth || {}).sort((a, b) => a[0].localeCompare(b[0]));
-
-    if (!entries.length) {
-        chartMonthlyEl.classList.add('hidden');
-        chartMonthlyEmpty.classList.remove('hidden');
-        return;
-    }
-
-    chartMonthlyEl.classList.remove('hidden');
-    chartMonthlyEmpty.classList.add('hidden');
-
-    new Chart(chartMonthlyEl, {
-        type: 'bar',
-        data: {
-            labels: entries.map(([key]) => {
-                const [entryYear, entryMonth] = key.split('-');
-                return `${window.ui.monthName(entryMonth).slice(0, 3)} ${entryYear}`;
-            }),
-            datasets: [{
-                data: entries.map(([, amount]) => amount),
-                backgroundColor: '#0f766e'
-            }]
-        }
-    });
+    const chart = window.ui.renderBarChart(chartMonthlyEl, stats.totalByMonth);
+    chartMonthlyEl.classList.toggle('hidden', !chart);
+    chartMonthlyEmpty.classList.toggle('hidden', !!chart);
 };
 
 const renderRecentExpenses = (recentExpenses) => {

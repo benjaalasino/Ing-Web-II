@@ -24,6 +24,11 @@ const postSuccessActions = document.getElementById('postSuccessActions');
 const btnRegisterAnother = document.getElementById('btnRegisterAnother');
 
 let selectedFile = null;
+const requiredFields = [
+    { el: inputCommerce, key: 'commerce' },
+    { el: inputDate, key: 'date' },
+    { el: inputAmount, key: 'amount' }
+];
 
 window.ui.CATEGORIES.forEach((category) => {
     selectCategory.insertAdjacentHTML('beforeend', `<option value="${category}">${category}</option>`);
@@ -36,11 +41,45 @@ const setMode = (mode) => {
     modeTicket.className = `btn ${ticketMode ? 'btn-primary' : 'btn-outline-secondary'}`;
 };
 
+const resetWarningBorders = () => {
+    requiredFields.forEach(({ el }) => el.classList.remove('field-warning'));
+};
+
+const validateImage = (file) => {
+    if (!file) return 'Selecciona una imagen.';
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!validTypes.includes(file.type)) return 'Formato invalido. Usa JPG, PNG, WEBP o PDF.';
+    if (file.size > 5 * 1024 * 1024) return 'La imagen supera 5MB.';
+    return null;
+};
+
+const validateExpense = () => {
+    const nowDate = new Date().toISOString().slice(0, 10);
+    if (!inputCommerce.value.trim() || !inputDate.value || !inputAmount.value || !selectCategory.value) {
+        return 'Completa todos los campos requeridos.';
+    }
+    if (inputDate.value > nowDate) return 'La fecha no puede ser futura.';
+    const amount = Number(inputAmount.value);
+    if (!Number.isFinite(amount) || amount <= 0) return 'El monto debe ser mayor a cero.';
+    return null;
+};
+
+const clearForm = () => {
+    [inputCommerce, inputDate, inputAmount, inputDescription, selectCategory, inputTicketImage]
+        .forEach((el) => el.value = '');
+    selectedFile = null;
+    ticketPreview.classList.add('hidden');
+    btnProcessTicket.classList.add('hidden');
+    ticketProcessingStatus.textContent = '';
+    resetWarningBorders();
+};
+
+// Mode toggle
 setMode('manual');
 modeManual.addEventListener('click', () => setMode('manual'));
 modeTicket.addEventListener('click', () => setMode('ticket'));
 
-// Drop zone interactions
+// Drop zone
 const dropZone = document.getElementById('dropZone');
 if (dropZone) {
     dropZone.addEventListener('click', () => inputTicketImage.click());
@@ -56,29 +95,12 @@ if (dropZone) {
     });
 }
 
-const resetWarningBorders = () => {
-    [inputCommerce, inputDate, inputAmount].forEach((field) => {
-        field.classList.remove('field-warning');
-    });
-};
+// Warning border removal on input
+requiredFields.forEach(({ el }) => {
+    el.addEventListener('input', () => el.classList.remove('field-warning'));
+});
 
-const validateImage = (file) => {
-    if (!file) {
-        return 'Selecciona una imagen.';
-    }
-
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-    if (!validTypes.includes(file.type)) {
-        return 'Formato invalido. Usa JPG, PNG, WEBP o PDF.';
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-        return 'La imagen supera 5MB.';
-    }
-
-    return null;
-};
-
+// Image selection
 inputTicketImage.addEventListener('change', () => {
     window.ui.hideMessage(errorMessage);
     const file = inputTicketImage.files[0];
@@ -104,7 +126,8 @@ inputTicketImage.addEventListener('change', () => {
     btnProcessTicket.classList.remove('hidden');
 });
 
-btnProcessTicket.addEventListener('click', async () => {
+// Process ticket with AI
+btnProcessTicket.addEventListener('click', () => {
     window.ui.hideMessage(errorMessage);
     resetWarningBorders();
 
@@ -114,81 +137,33 @@ btnProcessTicket.addEventListener('click', async () => {
         return;
     }
 
-    btnProcessTicket.disabled = true;
-    btnProcessTicket.textContent = 'Procesando...';
     ticketProcessingStatus.textContent = 'Procesando ticket con IA...';
 
-    try {
-        const formData = new FormData();
-        formData.append('image', selectedFile);
+    window.ui.withLoading(btnProcessTicket, 'Procesando...', 'Procesar con IA', async () => {
+        try {
+            const formData = new FormData();
+            formData.append('image', selectedFile);
 
-        const data = await window.apiFetch('/tickets/upload', {
-            method: 'POST',
-            body: formData
-        });
+            const data = await window.apiFetch('/tickets/upload', {
+                method: 'POST',
+                body: formData
+            });
 
-        inputCommerce.value = data.commerce || '';
-        inputDate.value = data.date || '';
-        inputAmount.value = data.amount || '';
+            requiredFields.forEach(({ el, key }) => {
+                el.value = data[key] || '';
+                el.classList.toggle('field-warning', !data[key]);
+            });
 
-        if (!data.commerce) {
-            inputCommerce.classList.add('field-warning');
+            ticketProcessingStatus.textContent = 'Ticket procesado. Revisa los datos antes de guardar.';
+        } catch (error) {
+            window.ui.showMessage(errorMessage, error.message, 'error');
+            ticketProcessingStatus.textContent = '';
         }
-        if (!data.date) {
-            inputDate.classList.add('field-warning');
-        }
-        if (!data.amount) {
-            inputAmount.classList.add('field-warning');
-        }
-
-        ticketProcessingStatus.textContent = 'Ticket procesado. Revisa los datos antes de guardar.';
-    } catch (error) {
-        window.ui.showMessage(errorMessage, error.message, 'error');
-        ticketProcessingStatus.textContent = '';
-    } finally {
-        btnProcessTicket.disabled = false;
-        btnProcessTicket.textContent = 'Procesar con IA';
-    }
+    });
 });
 
-[inputCommerce, inputDate, inputAmount].forEach((field) => {
-    field.addEventListener('input', () => field.classList.remove('field-warning'));
-});
-
-const validateExpense = () => {
-    const nowDate = new Date().toISOString().slice(0, 10);
-
-    if (!inputCommerce.value.trim() || !inputDate.value || !inputAmount.value || !selectCategory.value) {
-        return 'Completa todos los campos requeridos.';
-    }
-
-    if (inputDate.value > nowDate) {
-        return 'La fecha no puede ser futura.';
-    }
-
-    const amount = Number(inputAmount.value);
-    if (!Number.isFinite(amount) || amount <= 0) {
-        return 'El monto debe ser mayor a cero.';
-    }
-
-    return null;
-};
-
-const clearForm = () => {
-    inputCommerce.value = '';
-    inputDate.value = '';
-    inputAmount.value = '';
-    inputDescription.value = '';
-    selectCategory.value = '';
-    inputTicketImage.value = '';
-    selectedFile = null;
-    ticketPreview.classList.add('hidden');
-    btnProcessTicket.classList.add('hidden');
-    ticketProcessingStatus.textContent = '';
-    resetWarningBorders();
-};
-
-btnSaveExpense.addEventListener('click', async () => {
+// Save expense
+btnSaveExpense.addEventListener('click', () => {
     window.ui.hideMessage(errorMessage);
     window.ui.hideMessage(successMessage);
 
@@ -198,32 +173,29 @@ btnSaveExpense.addEventListener('click', async () => {
         return;
     }
 
-    btnSaveExpense.disabled = true;
-    btnSaveExpense.textContent = 'Guardando...';
+    window.ui.withLoading(btnSaveExpense, 'Guardando...', 'Guardar gasto', async () => {
+        try {
+            await window.apiFetch('/expenses', {
+                method: 'POST',
+                body: JSON.stringify({
+                    commerce: inputCommerce.value.trim(),
+                    date: inputDate.value,
+                    amount: Number(inputAmount.value),
+                    category: selectCategory.value,
+                    description: inputDescription.value.trim(),
+                    imageUrl: null
+                })
+            });
 
-    try {
-        await window.apiFetch('/expenses', {
-            method: 'POST',
-            body: JSON.stringify({
-                commerce: inputCommerce.value.trim(),
-                date: inputDate.value,
-                amount: Number(inputAmount.value),
-                category: selectCategory.value,
-                description: inputDescription.value.trim(),
-                imageUrl: null
-            })
-        });
-
-        window.ui.showMessage(successMessage, 'Gasto registrado exitosamente.', 'success');
-        postSuccessActions.classList.remove('hidden');
-    } catch (error) {
-        window.ui.showMessage(errorMessage, error.message, 'error');
-    } finally {
-        btnSaveExpense.disabled = false;
-        btnSaveExpense.textContent = 'Guardar gasto';
-    }
+            window.ui.showMessage(successMessage, 'Gasto registrado exitosamente.', 'success');
+            postSuccessActions.classList.remove('hidden');
+        } catch (error) {
+            window.ui.showMessage(errorMessage, error.message, 'error');
+        }
+    });
 });
 
+// Register another
 btnRegisterAnother.addEventListener('click', () => {
     clearForm();
     postSuccessActions.classList.add('hidden');

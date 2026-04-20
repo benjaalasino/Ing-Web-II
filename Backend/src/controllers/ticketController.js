@@ -33,12 +33,31 @@ const uploadTicket = async (req, res) => {
         throw new Error(`Error del servicio OCR: ${errorText}`);
     }
 
-    const data = await response.json();
+    const rawText = await response.text();
+    console.log('[OCR] n8n raw response:', rawText);
+
+    let data;
+    try {
+        data = JSON.parse(rawText);
+    } catch {
+        console.error('[OCR] n8n did not return valid JSON:', rawText);
+        res.status(201).json({
+            commerce: null,
+            date: null,
+            amount: null,
+            warning: 'La respuesta del OCR no es válida. Completa los campos manualmente.'
+        });
+        return;
+    }
+
+    // n8n puede devolver un array o un objeto
+    const item = Array.isArray(data) ? data[0] : data;
+    console.log('[OCR] Parsed item:', JSON.stringify(item));
 
     res.status(201).json({
-        commerce: data.commerce || null,
-        date: data.date || null,
-        amount: data.amount != null ? Number(data.amount) : null
+        commerce: item.commerce || null,
+        date: item.date || null,
+        amount: item.amount != null ? Number(item.amount) : null
     });
 };
 

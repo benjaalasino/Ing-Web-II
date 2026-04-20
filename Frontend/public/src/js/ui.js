@@ -53,6 +53,63 @@ const buildBadge = (category) => {
     return `<span class="badge" style="background:${color}">${category}</span>`;
 };
 
+const withLoading = async (btn, loadingText, originalText, action) => {
+    btn.disabled = true;
+    btn.textContent = loadingText;
+    try { await action(); } finally { btn.disabled = false; btn.textContent = originalText; }
+};
+
+const setupCodeDigits = (inputs) => {
+    inputs.forEach((input, idx) => {
+        input.addEventListener('input', () => {
+            input.value = input.value.replace(/\D/g, '').slice(0, 1);
+            if (input.value && idx < inputs.length - 1) inputs[idx + 1].focus();
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && !input.value && idx > 0) inputs[idx - 1].focus();
+        });
+        input.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, inputs.length);
+            inputs.forEach((inp, i) => { inp.value = paste[i] || ''; });
+            if (paste.length > 0) inputs[Math.min(paste.length, inputs.length - 1)].focus();
+        });
+    });
+};
+
+const getCodeValue = (inputs) => Array.from(inputs).map((i) => i.value).join('');
+
+const renderDoughnutChart = (canvas, categoryData) => {
+    const entries = Object.entries(categoryData || {}).filter(([, v]) => Number(v) > 0);
+    if (!entries.length) return null;
+    return new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: entries.map(([label]) => label),
+            datasets: [{
+                data: entries.map(([, value]) => value),
+                backgroundColor: entries.map(([label]) => CATEGORY_COLORS[label] || '#6b7280')
+            }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+    });
+};
+
+const renderBarChart = (canvas, monthlyData) => {
+    const entries = Object.entries(monthlyData || {}).sort((a, b) => a[0].localeCompare(b[0]));
+    if (!entries.length) return null;
+    return new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: entries.map(([key]) => {
+                const [y, m] = key.split('-');
+                return `${monthName(m).slice(0, 3)} ${y}`;
+            }),
+            datasets: [{ data: entries.map(([, amount]) => amount), backgroundColor: '#0f766e' }]
+        }
+    });
+};
+
 window.ui = {
     CATEGORIES,
     CATEGORY_COLORS,
@@ -61,5 +118,10 @@ window.ui = {
     monthName,
     showMessage,
     hideMessage,
-    buildBadge
+    buildBadge,
+    withLoading,
+    setupCodeDigits,
+    getCodeValue,
+    renderDoughnutChart,
+    renderBarChart
 };

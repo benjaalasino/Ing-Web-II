@@ -42,7 +42,7 @@ const validate = () => {
 
 registerForm.addEventListener('input', () => window.ui.hideMessage(errorMessage));
 
-btnRegister.addEventListener('click', async () => {
+btnRegister.addEventListener('click', () => {
     window.ui.hideMessage(errorMessage);
     window.ui.hideMessage(successMessage);
 
@@ -52,10 +52,7 @@ btnRegister.addEventListener('click', async () => {
         return;
     }
 
-    btnRegister.disabled = true;
-    btnRegister.textContent = 'Registrando...';
-
-    try {
+    window.ui.withLoading(btnRegister, 'Registrando...', 'Registrarse', async () => {
         await window.apiFetch('/auth/register', {
             method: 'POST',
             body: JSON.stringify({
@@ -66,11 +63,9 @@ btnRegister.addEventListener('click', async () => {
         });
 
         showVerifyStep(inputEmail.value.trim());
-    } catch (error) {
+    }).catch((error) => {
         window.ui.showMessage(errorMessage, error.message, 'error');
-        btnRegister.disabled = false;
-        btnRegister.textContent = 'Registrarse';
-    }
+    });
 });
 
 // ── Verification step (inline) ──
@@ -94,24 +89,10 @@ function showVerifyStep(email) {
     codeDigits[0].focus();
 }
 
-codeDigits.forEach(function (input, idx) {
-    input.addEventListener('input', function () {
-        input.value = input.value.replace(/\D/g, '').slice(0, 1);
-        if (input.value && idx < 5) codeDigits[idx + 1].focus();
-    });
-    input.addEventListener('keydown', function (e) {
-        if (e.key === 'Backspace' && !input.value && idx > 0) codeDigits[idx - 1].focus();
-    });
-    input.addEventListener('paste', function (e) {
-        e.preventDefault();
-        var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
-        for (var i = 0; i < 6; i++) codeDigits[i].value = paste[i] || '';
-        if (paste.length > 0) codeDigits[Math.min(paste.length, 5)].focus();
-    });
-});
+window.ui.setupCodeDigits(codeDigits);
 
 btnVerify.addEventListener('click', async function () {
-    var code = Array.from(codeDigits).map(function (i) { return i.value; }).join('');
+    var code = window.ui.getCodeValue(codeDigits);
     if (code.length !== 6) {
         window.ui.showMessage(verifyMsg, 'Ingresá los 6 dígitos.', 'error');
         return;
@@ -134,19 +115,14 @@ btnVerify.addEventListener('click', async function () {
     }
 });
 
-btnResendCode.addEventListener('click', async function () {
-    btnResendCode.disabled = true;
-    btnResendCode.textContent = 'Enviando...';
-    try {
+btnResendCode.addEventListener('click', function () {
+    window.ui.withLoading(btnResendCode, 'Enviando...', 'Reenviar', async () => {
         var data = await window.apiFetch('/auth/resend-verification', {
             method: 'POST',
             body: JSON.stringify({ email: registeredEmail })
         });
         window.ui.showMessage(verifyMsg, data.message, 'success');
-    } catch (err) {
+    }).catch(function (err) {
         window.ui.showMessage(verifyMsg, err.message, 'error');
-    } finally {
-        btnResendCode.disabled = false;
-        btnResendCode.textContent = 'Reenviar';
-    }
+    });
 });

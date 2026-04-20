@@ -10,13 +10,10 @@ if (window.auth.getToken()) {
 
 loginForm.addEventListener('input', () => window.ui.hideMessage(errorMessage));
 
-btnLogin.addEventListener('click', async () => {
+btnLogin.addEventListener('click', () => {
     window.ui.hideMessage(errorMessage);
 
-    btnLogin.disabled = true;
-    btnLogin.textContent = 'Ingresando...';
-
-    try {
+    window.ui.withLoading(btnLogin, 'Ingresando...', 'Entrar', async () => {
         const data = await window.apiFetch('/auth/login', {
             method: 'POST',
             body: JSON.stringify({
@@ -27,7 +24,7 @@ btnLogin.addEventListener('click', async () => {
 
         window.auth.saveAuth(data);
         window.location.href = window.auth.getHomeByRole(data.role);
-    } catch (error) {
+    }).catch((error) => {
         if (error.message && error.message.includes('verificar tu email')) {
             const verifyEmail = error.email || inputEmail.value.trim();
             errorMessage.innerHTML = error.message + ' <a href="verify-email.html?email=' + encodeURIComponent(verifyEmail) + '">Verificar ahora &rarr;</a>';
@@ -36,7 +33,5 @@ btnLogin.addEventListener('click', async () => {
         } else {
             window.ui.showMessage(errorMessage, error.message, 'error');
         }
-        btnLogin.disabled = false;
-        btnLogin.textContent = 'Entrar';
-    }
+    });
 });

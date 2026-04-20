@@ -46,11 +46,13 @@ if (frontendRoot) {
 			const requestedPath = path.join(frontendRoot, 'pages', `${requestedPage}.html`);
 
 			if (fs.existsSync(requestedPath)) {
+
 				return res.sendFile(requestedPath);
 			}
 
 			return next();
 		});
+		
 	}
 }
 
@@ -60,6 +62,7 @@ app.get('/', (req, res) => {
 	}
 
 	return res.status(200).json({
+
 		ok: true,
 		message: 'API desplegada correctamente',
 		docs: '/api/health'

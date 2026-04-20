@@ -25,34 +25,12 @@
         el.classList.remove('hidden');
     }
 
-    function getCode() {
-        return codeInputs.map(function (i) { return i.value; }).join('');
-    }
-
     // Auto-advance & paste support
-    codeInputs.forEach(function (input, idx) {
-        input.addEventListener('input', function () {
-            input.value = input.value.replace(/\D/g, '').slice(0, 1);
-            if (input.value && idx < 5) codeInputs[idx + 1].focus();
-        });
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Backspace' && !input.value && idx > 0) {
-                codeInputs[idx - 1].focus();
-            }
-        });
-        input.addEventListener('paste', function (e) {
-            e.preventDefault();
-            var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
-            for (var i = 0; i < 6; i++) {
-                codeInputs[i].value = paste[i] || '';
-            }
-            if (paste.length > 0) codeInputs[Math.min(paste.length, 5)].focus();
-        });
-    });
+    window.ui.setupCodeDigits(codeInputs);
 
     // Verify button
     btnVerify.addEventListener('click', async function () {
-        var code = getCode();
+        var code = window.ui.getCodeValue(codeInputs);
         if (code.length !== 6) {
             window.ui.showMessage(verifyMsg, 'Ingresá los 6 dígitos.', 'error');
             return;
@@ -75,32 +53,25 @@
     });
 
     // Resend button
-    btnResend.addEventListener('click', async function () {
-        btnResend.disabled = true;
-        btnResend.textContent = 'Enviando...';
-        try {
+    btnResend.addEventListener('click', function () {
+        window.ui.withLoading(btnResend, 'Enviando...', 'Reenviar código', async function () {
             var data = await window.apiFetch('/auth/resend-verification', {
                 method: 'POST',
                 body: JSON.stringify({ email: email })
             });
             window.ui.showMessage(verifyMsg, data.message, 'success');
-        } catch (err) {
+        }).catch(function (err) {
             window.ui.showMessage(verifyMsg, err.message, 'error');
-        } finally {
-            btnResend.disabled = false;
-            btnResend.textContent = 'Reenviar código';
-        }
+        });
     });
 
     // Manual email entry (no email in URL)
-    document.getElementById('btnSendCode').addEventListener('click', async function () {
+    document.getElementById('btnSendCode').addEventListener('click', function () {
         var manualEmail = document.getElementById('inputEmailManual').value.trim();
         var msgDiv = document.getElementById('sendCodeMsg');
         if (!manualEmail) return;
 
-        this.disabled = true;
-        this.textContent = 'Enviando...';
-        try {
+        window.ui.withLoading(document.getElementById('btnSendCode'), 'Enviando...', 'Enviar código', async function () {
             var data = await window.apiFetch('/auth/resend-verification', {
                 method: 'POST',
                 body: JSON.stringify({ email: manualEmail })
@@ -109,12 +80,9 @@
             displayEmail.textContent = email;
             window.ui.showMessage(msgDiv, data.message, 'success');
             setTimeout(function () { show(stateCode); }, 1200);
-        } catch (err) {
-            window.ui.showMessage(msgDiv, err.message, 'error');
-        } finally {
-            document.getElementById('btnSendCode').disabled = false;
-            document.getElementById('btnSendCode').textContent = 'Enviar código';
-        }
+        }).catch(function (err) {
+            window.ui.showMessage(document.getElementById('sendCodeMsg'), err.message, 'error');
+        });
     });
 
     // Init
