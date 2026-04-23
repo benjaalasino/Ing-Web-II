@@ -105,11 +105,15 @@ export const Intro: React.FC = () => {
           <span style={{ fontSize: 14, fontWeight: 900, letterSpacing: "0.2em", color: C.accent, textTransform: "uppercase" }}>✦ Gestión sin fricción</span>
         </div>
 
-        <h1 style={{ opacity: h1Op, transform: `translateY(${h1Y}px)`, fontWeight: 900, fontSize: 72, color: C.ink, textAlign: "center", lineHeight: 1.05, letterSpacing: "-0.025em", margin: 0, marginBottom: 20 }}>
-          Tu plata<br /><span style={{ color: C.primary }}>clara.</span>
+        <h1 style={{ opacity: h1Op, transform: `translateY(${h1Y}px)`, fontWeight: 900, fontSize: 86, color: C.primary, textAlign: "center", lineHeight: 1.0, letterSpacing: "-0.03em", margin: 0, marginBottom: 12 }}>
+          Cuentas Claras
         </h1>
 
-        <p style={{ opacity: subOp, fontFamily: "'Manrope',sans-serif", fontSize: 26, color: C.muted, textAlign: "center", lineHeight: 1.5, margin: 0, marginBottom: 48, maxWidth: 760 }}>
+        <p style={{ opacity: h1Op, transform: `translateY(${h1Y}px)`, fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: C.ink, textAlign: "center", margin: "0 0 22px", letterSpacing: "-0.01em" }}>
+          Tu dinero claro, tus decisiones seguras.
+        </p>
+
+        <p style={{ opacity: subOp, fontFamily: "'Manrope',sans-serif", fontSize: 22, color: C.muted, textAlign: "center", lineHeight: 1.5, margin: 0, marginBottom: 48, maxWidth: 760 }}>
           Registrá tickets, controlá presupuestos y recibí recomendaciones de tu asesor.
         </p>
 
