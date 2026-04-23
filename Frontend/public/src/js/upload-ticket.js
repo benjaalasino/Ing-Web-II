@@ -187,6 +187,7 @@ btnSaveExpense.addEventListener('click', () => {
                 })
             });
 
+            clearForm();
             window.ui.showMessage(successMessage, 'Gasto registrado exitosamente.', 'success');
             postSuccessActions.classList.remove('hidden');
         } catch (error) {
