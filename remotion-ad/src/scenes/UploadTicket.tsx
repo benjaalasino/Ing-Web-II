@@ -52,7 +52,7 @@ export const UploadTicket: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: C.bg, fontFamily: "'Manrope',sans-serif", overflow: "hidden" }}>
       <GridBg />
-      <div style={{ position: "absolute", inset: 0, padding: "60px 56px", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "absolute", inset: 0, padding: "168px 56px 220px", display: "flex", flexDirection: "column" }}>
         {/* Header */}
         <div style={{ opacity: headerOp, transform: `translateY(${headerY}px)`, marginBottom: 28 }}>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: C.accent, textTransform: "uppercase", letterSpacing: "0.22em", marginBottom: 6 }}>REGISTRO DE GASTOS</p>

@@ -95,7 +95,7 @@ export const Dashboard: React.FC = () => {
     <AbsoluteFill style={{ background: C.bg, fontFamily: "'Manrope',sans-serif", overflow: "hidden" }}>
       <GridBg />
 
-      <div style={{ position: "absolute", inset: 0, padding: "60px 56px", display: "flex", flexDirection: "column", gap: 0 }}>
+      <div style={{ position: "absolute", inset: 0, padding: "168px 56px 220px", display: "flex", flexDirection: "column", gap: 0 }}>
         {/* Top bar */}
         <div style={{
           display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 36,

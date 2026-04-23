@@ -63,7 +63,7 @@ export const Savings: React.FC = () => {
       <GridBg />
       <div style={{ position: "absolute", top: -180, right: -180, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, rgba(5,150,105,0.13) 0%, transparent 70%)" }} />
 
-      <div style={{ position: "absolute", inset: 0, padding: "60px 56px", display: "flex", flexDirection: "column" }}>
+      <div style={{ position: "absolute", inset: 0, padding: "168px 56px 220px", display: "flex", flexDirection: "column" }}>
         <div style={{ opacity: headerOp, transform: `translateY(${headerY}px)`, marginBottom: 24 }}>
           <p style={{ margin: 0, fontSize: 13, fontWeight: 900, color: C.accent, textTransform: "uppercase", letterSpacing: "0.22em", marginBottom: 6 }}>METAS FINANCIERAS</p>
           <h2 style={{ margin: 0, fontFamily: "'Sora',sans-serif", fontSize: 50, fontWeight: 900, color: C.ink }}>Mis Ahorros</h2>
