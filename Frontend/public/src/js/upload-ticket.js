@@ -68,6 +68,10 @@ const clearForm = () => {
     [inputCommerce, inputDate, inputAmount, inputDescription, selectCategory, inputTicketImage]
         .forEach((el) => el.value = '');
     selectedFile = null;
+    if (ticketPreview.src && ticketPreview.src.startsWith('blob:')) {
+        URL.revokeObjectURL(ticketPreview.src);
+    }
+    ticketPreview.src = '';
     ticketPreview.classList.add('hidden');
     btnProcessTicket.classList.add('hidden');
     ticketProcessingStatus.textContent = '';
@@ -188,6 +192,7 @@ btnSaveExpense.addEventListener('click', () => {
             });
 
             clearForm();
+            setMode('manual');
             window.ui.showMessage(successMessage, 'Gasto registrado exitosamente.', 'success');
             postSuccessActions.classList.remove('hidden');
         } catch (error) {
