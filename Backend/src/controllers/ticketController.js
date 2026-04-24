@@ -1,7 +1,5 @@
 const { groqApiKey } = require('../config/env');
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
-
 const uploadTicket = async (req, res) => {
     if (!req.file) {
         res.status(400).json({ statusCode: 400, message: 'Debes enviar una imagen en el campo image.' });
@@ -21,7 +19,7 @@ const uploadTicket = async (req, res) => {
     const base64Image = req.file.buffer.toString('base64');
     const dataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
-    const response = await fetch(GROQ_URL, {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
