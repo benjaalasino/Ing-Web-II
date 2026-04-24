@@ -1,6 +1,6 @@
-const { openaiApiKey } = require('../config/env');
+const { geminiApiKey } = require('../config/env');
 
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 const uploadTicket = async (req, res) => {
     if (!req.file) {
@@ -8,45 +8,39 @@ const uploadTicket = async (req, res) => {
         return;
     }
 
-    if (!openaiApiKey) {
+    if (!geminiApiKey) {
         res.status(201).json({
             commerce: null,
             date: null,
             amount: null,
-            warning: 'OCR no configurado. Agrega OPENAI_API_KEY en las variables de entorno.'
+            warning: 'OCR no configurado. Agrega GEMINI_API_KEY en las variables de entorno.'
         });
         return;
     }
 
     const base64Image = req.file.buffer.toString('base64');
-    const dataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
-    const response = await fetch(OPENAI_URL, {
+    const response = await fetch(`${GEMINI_URL}?key=${geminiApiKey}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${openaiApiKey}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            messages: [
-                {
-                    role: 'user',
-                    content: [
-                        {
-                            type: 'text',
-                            text: 'Analiza este ticket o factura y extrae: nombre del comercio (commerce), fecha en formato YYYY-MM-DD (date), y monto total numérico sin símbolos de moneda (amount). Devuelve SOLO un JSON válido con la estructura: {"commerce": "...", "date": "...", "amount": 0.0}. Si no encuentras un campo usa null.'
-                        },
-                        {
-                            type: 'image_url',
-                            image_url: { url: dataUrl }
+            contents: [{
+                parts: [
+                    {
+                        text: 'Analiza este ticket o factura y extrae: nombre del comercio (commerce), fecha en formato YYYY-MM-DD (date), y monto total numérico sin símbolos de moneda (amount). Devuelve SOLO un JSON válido con la estructura: {"commerce": "...", "date": "...", "amount": 0.0}. Si no encuentras un campo usa null.'
+                    },
+                    {
+                        inline_data: {
+                            mime_type: req.file.mimetype,
+                            data: base64Image
                         }
-                    ]
-                }
-            ],
-            response_format: { type: 'json_object' },
-            max_tokens: 200,
-            temperature: 0.1
+                    }
+                ]
+            }],
+            generationConfig: {
+                temperature: 0.1,
+                responseMimeType: 'application/json'
+            }
         })
     });
 
@@ -55,10 +49,10 @@ const uploadTicket = async (req, res) => {
         throw new Error(`Error del servicio OCR: ${errorText}`);
     }
 
-    const openaiData = await response.json();
-    console.log('[OCR] OpenAI usage:', JSON.stringify(openaiData.usage));
+    const geminiData = await response.json();
+    console.log('[OCR] Gemini finish reason:', geminiData.candidates?.[0]?.finishReason);
 
-    const text = openaiData.choices?.[0]?.message?.content;
+    const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!text) {
         res.status(201).json({
@@ -74,7 +68,7 @@ const uploadTicket = async (req, res) => {
     try {
         data = JSON.parse(text);
     } catch {
-        console.error('[OCR] OpenAI did not return valid JSON:', text);
+        console.error('[OCR] Gemini did not return valid JSON:', text);
         res.status(201).json({
             commerce: null,
             date: null,
