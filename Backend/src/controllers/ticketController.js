@@ -1,6 +1,6 @@
-const { geminiApiKey } = require('../config/env');
+const { groqApiKey } = require('../config/env');
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const uploadTicket = async (req, res) => {
     if (!req.file) {
@@ -8,39 +8,45 @@ const uploadTicket = async (req, res) => {
         return;
     }
 
-    if (!geminiApiKey) {
+    if (!groqApiKey) {
         res.status(201).json({
             commerce: null,
             date: null,
             amount: null,
-            warning: 'OCR no configurado. Agrega GEMINI_API_KEY en las variables de entorno.'
+            warning: 'OCR no configurado. Agrega GROQ_API_KEY en las variables de entorno.'
         });
         return;
     }
 
     const base64Image = req.file.buffer.toString('base64');
+    const dataUrl = `data:${req.file.mimetype};base64,${base64Image}`;
 
-    const response = await fetch(`${GEMINI_URL}?key=${geminiApiKey}`, {
+    const response = await fetch(GROQ_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${groqApiKey}`
+        },
         body: JSON.stringify({
-            contents: [{
-                parts: [
-                    {
-                        text: 'Analiza este ticket o factura y extrae: nombre del comercio (commerce), fecha en formato YYYY-MM-DD (date), y monto total numérico sin símbolos de moneda (amount). Devuelve SOLO un JSON válido con la estructura: {"commerce": "...", "date": "...", "amount": 0.0}. Si no encuentras un campo usa null.'
-                    },
-                    {
-                        inline_data: {
-                            mime_type: req.file.mimetype,
-                            data: base64Image
+            model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+            messages: [
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text',
+                            text: 'Analiza este ticket o factura y extrae: nombre del comercio (commerce), fecha en formato YYYY-MM-DD (date), y monto total numérico sin símbolos de moneda (amount). Devuelve SOLO un JSON válido con la estructura: {"commerce": "...", "date": "...", "amount": 0.0}. Si no encuentras un campo usa null.'
+                        },
+                        {
+                            type: 'image_url',
+                            image_url: { url: dataUrl }
                         }
-                    }
-                ]
-            }],
-            generationConfig: {
-                temperature: 0.1,
-                responseMimeType: 'application/json'
-            }
+                    ]
+                }
+            ],
+            response_format: { type: 'json_object' },
+            max_tokens: 200,
+            temperature: 0.1
         })
     });
 
@@ -49,10 +55,10 @@ const uploadTicket = async (req, res) => {
         throw new Error(`Error del servicio OCR: ${errorText}`);
     }
 
-    const geminiData = await response.json();
-    console.log('[OCR] Gemini finish reason:', geminiData.candidates?.[0]?.finishReason);
+    const groqData = await response.json();
+    console.log('[OCR] Groq usage:', JSON.stringify(groqData.usage));
 
-    const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+    const text = groqData.choices?.[0]?.message?.content;
 
     if (!text) {
         res.status(201).json({
@@ -68,7 +74,7 @@ const uploadTicket = async (req, res) => {
     try {
         data = JSON.parse(text);
     } catch {
-        console.error('[OCR] Gemini did not return valid JSON:', text);
+        console.error('[OCR] Groq did not return valid JSON:', text);
         res.status(201).json({
             commerce: null,
             date: null,

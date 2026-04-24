@@ -7,6 +7,6 @@ module.exports = {
     jwtSecret: process.env.JWT_SECRET || 'dev-only-change-this-secret',
     databaseUrl: process.env.DATABASE_URL || null,
     n8nWebhookUrl: process.env.N8N_WEBHOOK_URL || null,
-    geminiApiKey: process.env.GEMINI_API_KEY || null,
+    groqApiKey: process.env.GROQ_API_KEY || null,
     appUrl: process.env.APP_URL || 'http://localhost:3000'
 };
