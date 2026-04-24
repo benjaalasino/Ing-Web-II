@@ -1,6 +1,6 @@
 const { geminiApiKey } = require('../config/env');
 
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-8b:generateContent';
 
 const uploadTicket = async (req, res) => {
     if (!req.file) {
