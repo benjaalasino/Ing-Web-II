@@ -47,8 +47,8 @@ const resetWarningBorders = () => {
 
 const validateImage = (file) => {
     if (!file) return 'Selecciona una imagen.';
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-    if (!validTypes.includes(file.type)) return 'Formato invalido. Usa JPG, PNG, WEBP o PDF.';
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) return 'Formato inválido. Usa JPG, PNG o WEBP.';
     if (file.size > 5 * 1024 * 1024) return 'La imagen supera 5MB.';
     return null;
 };
