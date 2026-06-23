@@ -1,20 +1,41 @@
 {
   "name": "gastoclaro-backend",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "API para extraccion de datos de facturas",
-  "main": "server.js",
+  "description": "API NestJS para gestion de gastos y extraccion de datos de facturas",
+  "main": "dist/main.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:prod": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "prestart": "nest build"
   },
   "dependencies": {
+    "@nestjs/common": "^10.4.15",
+    "@nestjs/config": "^3.3.0",
+    "@nestjs/core": "^10.4.15",
+    "@nestjs/jwt": "^10.2.0",
+    "@nestjs/platform-express": "^10.4.15",
+    "@nestjs/serve-static": "^4.0.2",
     "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^2.0.2",
-    "pg": "^8.20.0"
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "pg": "^8.20.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.4.9",
+    "@nestjs/schematics": "^10.2.3",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^4.17.21",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^20.17.12",
+    "@types/pg": "^8.11.10",
+    "ts-loader": "^9.5.1",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3"
   }
 }
