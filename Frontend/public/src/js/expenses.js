@@ -32,7 +32,8 @@ const deleteError = document.getElementById('deleteError');
 
 // Cantidad de gastos por tanda. El backend filtra, ordena y pagina; el front
 // solo acumula lo que va recibiendo y pide la siguiente tanda con "Ver más".
-const PAGE_SIZE = 10;
+// En celular (<=640px, mismo breakpoint que el CSS) trae 5; en compu, 10.
+const getPageSize = () => (window.matchMedia('(max-width: 640px)').matches ? 5 : 10);
 
 const state = {
     items: [],        // gastos ya cargados (se van concatenando)
@@ -201,7 +202,7 @@ const renderTable = () => {
 
 // Primera tanda: reemplaza lo cargado (uso al filtrar, ordenar o limpiar).
 const loadFirst = async () => {
-    const page = await fetchPage(0, PAGE_SIZE);
+    const page = await fetchPage(0, getPageSize());
     state.items = page.items;
     state.total = page.total;
     state.totalAmount = page.totalAmount;
@@ -210,7 +211,7 @@ const loadFirst = async () => {
 
 // Siguiente tanda: pide desde donde quedo y concatena.
 const loadMore = async () => {
-    const page = await fetchPage(state.items.length, PAGE_SIZE);
+    const page = await fetchPage(state.items.length, getPageSize());
     state.items = state.items.concat(page.items);
     state.total = page.total;
     state.totalAmount = page.totalAmount;
@@ -220,7 +221,7 @@ const loadMore = async () => {
 // Tras crear/editar/borrar: recarga la misma ventana que el usuario tenia
 // abierta (preserva las tandas que ya habia expandido con "Ver más").
 const reloadCurrent = async () => {
-    const windowSize = Math.max(state.items.length, PAGE_SIZE);
+    const windowSize = Math.max(state.items.length, getPageSize());
     const page = await fetchPage(0, windowSize);
     state.items = page.items;
     state.total = page.total;
