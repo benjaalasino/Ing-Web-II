@@ -106,12 +106,14 @@ const renderRecommendations = (recommendations) => {
 };
 
 const loadDashboard = async () => {
-    const [stats, recentExpenses, budgetProgress, recommendations] = await Promise.all([
+    const [stats, expensesPage, budgetProgress, recommendations] = await Promise.all([
         window.apiFetch('/expenses/stats'),
         window.apiFetch('/expenses?limit=5'),
         window.apiFetch('/budgets/progress'),
         window.apiFetch('/recommendations?limit=3')
     ]);
+
+    const recentExpenses = expensesPage.items;
 
     renderCards(stats, recentExpenses, budgetProgress);
     renderCategoryChart(stats);

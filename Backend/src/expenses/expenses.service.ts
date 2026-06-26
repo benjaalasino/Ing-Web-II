@@ -46,14 +46,42 @@ export class ExpensesService {
       params.push(`%${String(query.commerce).toLowerCase()}%`);
     }
 
-    let sql = `SELECT * FROM expenses WHERE ${conditions.join(' AND ')} ORDER BY date DESC`;
-    if (query.limit) {
-      sql += ` LIMIT $${idx}`;
-      params.push(Number(query.limit));
-    }
+    const where = conditions.join(' AND ');
 
-    const { rows } = await this.db.query<ExpenseRow>(sql, params);
-    return rows.map(mapExpense);
+    // Total y suma de TODO lo que matchea el filtro (no solo la pagina actual),
+    // para que el front sepa cuanto falta y muestre el monto real.
+    const { rows: totals } = await this.db.query<{ total: number; total_amount: string }>(
+      `SELECT COUNT(*)::int AS total, COALESCE(SUM(amount), 0) AS total_amount
+       FROM expenses WHERE ${where}`,
+      params,
+    );
+    const total = totals[0].total;
+    const totalAmount = Number(totals[0].total_amount);
+
+    // Orden por lista blanca (la columna y direccion nunca vienen crudas del SQL).
+    const sortColumn = query.sort === 'amount' ? 'amount' : 'date';
+    const sortOrder = query.order === 'asc' ? 'ASC' : 'DESC';
+
+    // Paginacion: por defecto 10 filas. `id` como desempate para que el orden
+    // sea estable y la paginacion no duplique ni saltee filas con igual fecha.
+    const limit = query.limit && query.limit > 0 ? Number(query.limit) : 10;
+    const offset = query.offset && query.offset > 0 ? Number(query.offset) : 0;
+
+    const dataParams = [...params, limit, offset];
+    const sql =
+      `SELECT * FROM expenses WHERE ${where} ` +
+      `ORDER BY ${sortColumn} ${sortOrder}, id DESC ` +
+      `LIMIT $${idx} OFFSET $${idx + 1}`;
+
+    const { rows } = await this.db.query<ExpenseRow>(sql, dataParams);
+
+    return {
+      items: rows.map(mapExpense),
+      total,
+      totalAmount,
+      limit,
+      offset,
+    };
   }
 
   async create(user: AuthUser, dto: CreateExpenseDto) {

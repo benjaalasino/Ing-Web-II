@@ -30,10 +30,18 @@ const btnConfirmDelete = document.getElementById('btnConfirmDelete');
 const btnCancelDelete = document.getElementById('btnCancelDelete');
 const deleteError = document.getElementById('deleteError');
 
-let allExpenses = [];
-let filteredExpenses = [];
-let sortField = 'date';
-let sortDirection = 'desc';
+// Cantidad de gastos por tanda. El backend filtra, ordena y pagina; el front
+// solo acumula lo que va recibiendo y pide la siguiente tanda con "Ver más".
+const PAGE_SIZE = 10;
+
+const state = {
+    items: [],        // gastos ya cargados (se van concatenando)
+    total: 0,         // total que matchea el filtro actual (lo informa el backend)
+    totalAmount: 0,   // suma de TODO lo filtrado (no solo lo cargado)
+    sort: 'date',
+    order: 'desc'
+};
+
 let editingId = null;
 let deletingId = null;
 
@@ -45,24 +53,54 @@ const setFilterOptions = () => {
     editCategory.innerHTML = window.ui.CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join('');
 };
 
+// Sin traer todos los gastos no podemos derivar los años; usamos un rango fijo
+// (año actual y los 5 anteriores), suficiente para filtrar.
 const setYearOptions = () => {
-    const years = [...new Set(allExpenses.map((expense) => new Date(expense.date).getFullYear()))].sort((a, b) => b - a);
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear; year >= currentYear - 5; year -= 1) {
+        years.push(year);
+    }
     filterYear.innerHTML = ['<option value="">Todos</option>', ...years.map((year) => `<option value="${year}">${year}</option>`)].join('');
 };
 
-const applySorting = () => {
-    filteredExpenses.sort((a, b) => {
-        const direction = sortDirection === 'asc' ? 1 : -1;
-        if (sortField === 'amount') {
-            return (Number(a.amount) - Number(b.amount)) * direction;
-        }
-        return (new Date(a.date) - new Date(b.date)) * direction;
-    });
+const getFilters = () => ({
+    category: filterCategory.value,
+    month: filterMonth.value,
+    year: filterYear.value,
+    commerce: filterCommerce.value.trim()
+});
+
+const hasFiltersApplied = () => {
+    const filters = getFilters();
+    return Boolean(filters.category || filters.month || filters.year || filters.commerce);
 };
 
+const buildQuery = (offset, limit) => {
+    const filters = getFilters();
+    const params = new URLSearchParams();
+
+    if (filters.category) params.set('category', filters.category);
+    if (filters.month) params.set('month', filters.month);
+    if (filters.year) params.set('year', filters.year);
+    if (filters.commerce) params.set('commerce', filters.commerce);
+
+    params.set('sort', state.sort);
+    params.set('order', state.order);
+    params.set('limit', limit);
+    params.set('offset', offset);
+
+    return params.toString();
+};
+
+const fetchPage = (offset, limit) => window.apiFetch(`/expenses?${buildQuery(offset, limit)}`);
+
 const renderSummary = () => {
-    const total = filteredExpenses.reduce((sum, item) => sum + Number(item.amount), 0);
-    resultSummary.innerHTML = `Mostrando <strong>${filteredExpenses.length} gastos</strong> - Total: <strong>${window.ui.formatCurrency(total)}</strong>`;
+    if (!state.total) {
+        resultSummary.innerHTML = '';
+        return;
+    }
+    resultSummary.innerHTML = `Mostrando <strong>${state.items.length}</strong> de <strong>${state.total} gastos</strong> - Total: <strong>${window.ui.formatCurrency(state.totalAmount)}</strong>`;
 };
 
 const openEdit = (expense) => {
@@ -83,28 +121,31 @@ const openDelete = (expenseId) => {
 };
 
 const renderTable = () => {
-    if (!filteredExpenses.length) {
-        const hasFilters = filterCategory.value || filterMonth.value || filterYear.value || filterCommerce.value.trim();
-        tableWrap.innerHTML = hasFilters
+    if (!state.items.length) {
+        tableWrap.innerHTML = hasFiltersApplied()
             ? '<p>No encontramos gastos con esos filtros.</p>'
             : '<p>Todavia no tenes gastos registrados. <a href="upload-ticket.html">Sube tu primer ticket</a>.</p>';
         renderSummary();
         return;
     }
 
+    const indicator = (field) => (state.sort === field ? (state.order === 'asc' ? ' ▲' : ' ▼') : '');
+    const remaining = state.total - state.items.length;
+    const hasMore = remaining > 0;
+
     tableWrap.innerHTML = `
         <table id="tableExpenses">
             <thead>
                 <tr>
-                    <th class="sortable" data-sort="date">Fecha</th>
+                    <th class="sortable" data-sort="date">Fecha${indicator('date')}</th>
                     <th>Comercio</th>
                     <th>Categoria</th>
-                    <th class="sortable" data-sort="amount">Monto</th>
+                    <th class="sortable" data-sort="amount">Monto${indicator('amount')}</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                ${filteredExpenses.map((expense) => `
+                ${state.items.map((expense) => `
                     <tr>
                         <td>${window.ui.formatDate(expense.date)}</td>
                         <td>${expense.commerce.length > 30 ? `${expense.commerce.slice(0, 30)}...` : expense.commerce}</td>
@@ -118,11 +159,12 @@ const renderTable = () => {
                 `).join('')}
             </tbody>
         </table>
+        ${hasMore ? `<div style="text-align:center;margin-top:1rem;"><button id="btnLoadMore" type="button" class="btn btn-secondary">Ver más (${remaining} restantes)</button></div>` : ''}
     `;
 
     tableWrap.querySelectorAll('[data-edit]').forEach((button) => {
         button.addEventListener('click', () => {
-            const expense = allExpenses.find((item) => item.id === Number(button.dataset.edit));
+            const expense = state.items.find((item) => item.id === Number(button.dataset.edit));
             if (expense) {
                 openEdit(expense);
             }
@@ -136,64 +178,66 @@ const renderTable = () => {
     tableWrap.querySelectorAll('[data-sort]').forEach((header) => {
         header.addEventListener('click', () => {
             const field = header.dataset.sort;
-            if (sortField === field) {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            if (state.sort === field) {
+                state.order = state.order === 'asc' ? 'desc' : 'asc';
             } else {
-                sortField = field;
-                sortDirection = field === 'date' ? 'desc' : 'asc';
+                state.sort = field;
+                state.order = field === 'date' ? 'desc' : 'asc';
             }
-            applySorting();
-            renderTable();
+            // Reordenar implica volver a pedir desde la primera tanda.
+            loadFirst().catch((error) => window.ui.showMessage(errorMessage, error.message, 'error'));
         });
+    });
+
+    const btnLoadMore = document.getElementById('btnLoadMore');
+    btnLoadMore?.addEventListener('click', () => {
+        btnLoadMore.disabled = true;
+        btnLoadMore.textContent = 'Cargando...';
+        loadMore().catch((error) => window.ui.showMessage(errorMessage, error.message, 'error'));
     });
 
     renderSummary();
 };
 
-const applyFilters = () => {
-    const category = filterCategory.value;
-    const month = filterMonth.value;
-    const year = filterYear.value;
-    const commerce = filterCommerce.value.trim().toLowerCase();
-
-    filteredExpenses = allExpenses.filter((expense) => {
-        const date = new Date(expense.date);
-
-        if (category && expense.category !== category) {
-            return false;
-        }
-        if (month && date.getMonth() + 1 !== Number(month)) {
-            return false;
-        }
-        if (year && date.getFullYear() !== Number(year)) {
-            return false;
-        }
-        if (commerce && !expense.commerce.toLowerCase().includes(commerce)) {
-            return false;
-        }
-
-        return true;
-    });
-
-    applySorting();
+// Primera tanda: reemplaza lo cargado (uso al filtrar, ordenar o limpiar).
+const loadFirst = async () => {
+    const page = await fetchPage(0, PAGE_SIZE);
+    state.items = page.items;
+    state.total = page.total;
+    state.totalAmount = page.totalAmount;
     renderTable();
 };
 
-const loadExpenses = async () => {
-    allExpenses = await window.apiFetch('/expenses');
-    filteredExpenses = [...allExpenses];
-    setYearOptions();
-    applySorting();
+// Siguiente tanda: pide desde donde quedo y concatena.
+const loadMore = async () => {
+    const page = await fetchPage(state.items.length, PAGE_SIZE);
+    state.items = state.items.concat(page.items);
+    state.total = page.total;
+    state.totalAmount = page.totalAmount;
     renderTable();
 };
 
-btnFilter.addEventListener('click', applyFilters);
+// Tras crear/editar/borrar: recarga la misma ventana que el usuario tenia
+// abierta (preserva las tandas que ya habia expandido con "Ver más").
+const reloadCurrent = async () => {
+    const windowSize = Math.max(state.items.length, PAGE_SIZE);
+    const page = await fetchPage(0, windowSize);
+    state.items = page.items;
+    state.total = page.total;
+    state.totalAmount = page.totalAmount;
+    renderTable();
+};
+
+btnFilter.addEventListener('click', () => {
+    loadFirst().catch((error) => window.ui.showMessage(errorMessage, error.message, 'error'));
+});
+
 btnClearFilters.addEventListener('click', () => {
     filterCategory.value = '';
     filterMonth.value = '';
     filterYear.value = '';
     filterCommerce.value = '';
-    applyFilters();
+    loadFirst().catch((error) => window.ui.showMessage(errorMessage, error.message, 'error'));
 });
 
 btnCancelEdit.addEventListener('click', () => modalEdit.classList.add('hidden'));
@@ -217,8 +261,7 @@ btnSaveEdit.addEventListener('click', async () => {
 
         modalEdit.classList.add('hidden');
         window.ui.showMessage(successMessage, 'Gasto actualizado correctamente.', 'success');
-        await loadExpenses();
-        applyFilters();
+        await reloadCurrent();
     } catch (error) {
         window.ui.showMessage(editError, error.message, 'error');
     }
@@ -230,12 +273,12 @@ btnConfirmDelete.addEventListener('click', async () => {
         await window.apiFetch(`/expenses/${deletingId}`, { method: 'DELETE' });
         modalDeleteConfirm.classList.add('hidden');
         window.ui.showMessage(successMessage, 'Gasto eliminado correctamente.', 'success');
-        await loadExpenses();
-        applyFilters();
+        await reloadCurrent();
     } catch (error) {
         window.ui.showMessage(deleteError, error.message, 'error');
     }
 });
 
 setFilterOptions();
-loadExpenses().catch((error) => window.ui.showMessage(errorMessage, error.message, 'error'));
+setYearOptions();
+loadFirst().catch((error) => window.ui.showMessage(errorMessage, error.message, 'error'));
